@@ -1,0 +1,49 @@
+api_platform:
+    title: Alex M Finance API
+    version: 1.0.0
+    # The list of enabled formats. The first one will be the default.
+    formats:
+        json:
+            mime_types: ['application/json']
+        jsonld:
+            mime_types: ['application/ld+json']
+        html:
+            mime_types: ['text/html']
+
+    patch_formats:
+        json: [ 'application/json' ]
+
+    docs_formats:
+        jsonld: ['application/ld+json']
+        jsonopenapi: ['application/vnd.openapi+json']
+        html: ['text/html']
+
+    defaults:
+        stateless: true
+        cache_headers:
+            vary: ['Content-Type', 'Authorization', 'Origin']
+        extra_properties:
+            standard_put: true
+            rfc_7807_compliant_errors: true
+        pagination_client_items_per_page: true
+    collection:
+        pagination:
+            items_per_page_parameter_name: itemsPerPage # Default value
+
+    keep_legacy_inflector: false
+    use_symfony_listeners: true
+    swagger:
+        versions: [ 3 ]
+        api_keys:
+            access_user:
+                name: Access-User
+                type: header
+            access_token:
+                name: Access-Token
+                type: header
+            authorization:
+                name: Authorization
+                type: header
+        swagger_ui_extra_configuration:
+            docExpansion: list
+            filter: false

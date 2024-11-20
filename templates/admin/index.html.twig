@@ -1,0 +1,13 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block page_title %}
+    Munteanu Finance Dashboard
+{% endblock %}
+
+{% block main %}
+    <div class="row">
+        <div class="col-12">
+            {{ render_chart(chart) }}
+        </div>
+    </div>
+{% endblock %}

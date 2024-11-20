@@ -1,0 +1,103 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block page_title %}
+    {{ records|length }} Unique Unmatched Records
+{% endblock %}
+
+{% block main %}
+    <div class="row">
+        <div class="col-12">
+            <pre>{{ content }}</pre>
+            {% if records|length > 0 %}
+                <div data-controller="unmatched">
+                    <div style="position: fixed; border-radius: 8px; z-index: 2; top:40px; right: 20px; padding: 10px;">
+                        <div style="border: solid 1px #ccc; background: #ffc; border-radius: 8px; padding: 8px; margin: 4px;">
+                            <label>
+                                <select class="form-select form-select-sm"
+                                    data-unmatched-target="rule"
+                                    data-action="change->unmatched#onRuleChange"
+                                    id="ruleSelect"
+                                >
+                                    <option value="0">Please select a rule</option>
+                                {% for category in rules %}
+                                    <optgroup label="{{ category.s }}">
+                                            {% for s in category.e %}
+                                                <option value="{{ s.id }}"
+                                                        title="Account: {{ s.account }}&#10;Credit: {{ s.credit }}&#10;Debit: {{ s.debit }}&#10;Current matches:&#10;&#10;{% for matchValue in s.matches %}{{ matchValue }}&#10;{% endfor %}"
+                                                        data-matches='{{ s.matchesJson }}'
+                                                >
+                                                    - {{ s.subCategoryName }}
+                                                    - {{ s.name }}
+                                                </option>
+                                            {% endfor %}
+                                    </optgroup>
+                                {% endfor %}
+                                </select>
+                            </label><button class="btn btn-success btn-lg" style="margin:-4px 0 0 8px;" disabled
+                                    data-unmatched-target="openModalButton"
+                                    data-action="click->unmatched#onOpenModalButtonClicked"
+                            ><i class="fa fa-arrow-right"></i> Assign selected records to rule</button>
+                        </div>
+                    </div>
+                    <table class="table datagrid">
+                        <thead>
+                        <tr><th>Record</th><th>Count&nbsp;</th><th>Debit</th><th>Credit</th><th>Description</th><th>Account</th></tr>
+                        </thead>
+                        {% for key,value in records %}
+                            <tr>
+                                <td>
+                                    <label>
+                                        <input type="checkbox" name="records[]" value="{{ value.value }}"
+                                                  data-action="change->unmatched#onRecordChange"
+                                        /> &nbsp;{{ key }}</label></td>
+                                <td><a href="/admin?crudAction=index&crudControllerFqcn=App%5CController%5CAdmin%5CRecordCrudController&query={{ value.value|url_encode}}">
+                                        {{ value.count }}
+                                    </a></td>
+                                <td>{{ value.debit }}</td>
+                                <td>{{ value.credit }}</td>
+                                <td><span title="{{ value.description }}">{{ value.description|u.truncate(84, '...', true) }}</span></td>
+                                <td>{{ value.account }}</td>
+                            </tr>
+                        {% endfor %}
+                    </table>
+                    <div class="modal fade" tabindex="-1"
+                        data-unmatched-target="unmatchedModal"
+                    >
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-body">
+                                    <div id="json-modal-wrapper">
+                                        <div
+                                            data-unmatched-target="loading"
+                                            class="d-none"
+                                        >
+                                            <i class="fa-2x">
+                                                <i class="fas fa-spinner fa-spin"></i>
+                                            </i>
+                                            <strong>{{ "Please wait"|trans }}</strong>
+                                        </div>
+                                        <div
+                                            data-unmatched-target="modalContent"
+                                        ></div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" data-bs-dismiss="modal" class="btn btn-secondary">
+                                        <span class="btn-label">{{ 'Close'|trans }}</span>
+                                    </button>
+                                    <button type="button" class="btn btn-danger"
+                                        data-action="click->unmatched#onAssignAndRerun"
+                                    >
+                                        <span class="btn-label">Assign and rerun !</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <h2>Congratulations ! All records are matched</h2>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

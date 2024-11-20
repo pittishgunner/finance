@@ -1,0 +1,28 @@
+@import url('https://cdn.jsdelivr.net/gh/alumuko/vanilla-datetimerange-picker@latest/dist/vanilla-datetimerange-picker.css');
+
+:root { --sidebar-bg: #deebff; }
+
+.main-content {
+    margin-bottom: 100px;
+}
+
+.markdown-preview {
+    margin-top: 10px;
+    border: 2px dashed #da3735;
+    padding: 5px;
+}
+
+.form-date-range {
+    margin:22px 32px 0 0;
+    .form-control {
+        display: inline-block;
+        width: 220px;
+    }
+    .btn-success {
+        width: 100px;
+        margin: 0 0 4px 0;
+    }
+
+
+
+}

@@ -1,0 +1,15 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block page_title %}
+    Categories
+{% endblock %}
+
+{% block main %}
+    <div class="row">
+        <div class="col-12">
+            <div {{ react_component('Categories', { fullName: 'Fabien' }) }}>
+                Loading... <i class="fas fa-cog fa-spin fa-3x"></i>
+            </div>
+        </div>
+    </div>
+{% endblock %}
