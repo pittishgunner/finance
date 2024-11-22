@@ -2,6 +2,7 @@
 
 namespace App\Parser;
 
+use App\Entity\CapturedRequest;
 use App\Entity\Record;
 use DateTime;
 use DateTimeImmutable;
@@ -12,6 +13,52 @@ class INGB extends BaseParser
     public function getName(): string
     {
         return 'ING';
+    }
+
+    public function predictRecord($string): array
+    {
+        $ignored = [
+            'tocmai ai incercat sa accesezi home',
+            'Apasa aici pentru a aproba sau anula',
+        ];
+        foreach ($ignored as $case) {
+            if (strstr(strtolower($string), strtolower($case))) {
+                return ['ignored' => $string];
+            }
+        }
+
+        $cases = [
+            'plati POS' => '/Ai autorizat tranzactia de (?<debit>(.*)) (?<currency>(\w{3})) la (?<details>(.*)) din contul (?<account>(\d+)) in (?<date>(\d{1,4}-\d{1,2}-\d{2,4})). Sold: (?<balance>(.*))./mi',
+            'intrari diverse' => '/Suma (?<credit>(.*)) (?<currency>(\w{3})) a fost creditata in (?<date>(\d{1,4}-\d{1,2}-\d{2,4})) in contul (?<account>(\d+)) - (?<details>(.*)). Sold: (?<balance>(.*))./mi',
+            'transferuri' => '/Suma (?<debit>(.*)) (?<currency>(\w{3})) a fost debitata in (?<date>(\d{1,4}-\d{1,2}-\d{2,4})) din contul (?<account>(\d+)) - (?<details>(.*)). Sold: (?<balance>(.*))./mi',
+            'round-up' => '/Ai economisit (?<debit>(.*)) (?<currency>(\w{3})) prin (?<details>(.*))./mi',
+        ];
+
+        foreach ($cases as $key => $case) {
+            preg_match($case, $string, $matches);
+            if (!empty($matches)) {
+                $matches['matched'] = $key;
+                $matches['string'] = $string;
+                foreach ($matches as $matchKey => $match) {
+                    if (is_integer($matchKey)) {
+                        unset($matches[$matchKey]);
+                    }
+                    if ($matchKey === 'balance' && !empty($matches['currency'])) {
+                        $matches[$matchKey] = $this->getPredictionFloatValue(
+                            str_replace(' ' . $matches['currency'] , '', $matches[$matchKey])
+                        );
+                    }
+                    if ($matchKey === 'debit' || $matchKey === 'credit') {
+                        $matches[$matchKey] = $this->getPredictionFloatValue($matches[$matchKey]);
+                    }
+                }
+                ksort($matches);
+
+                return $matches;
+            }
+        }
+
+        return ['unmatched' => $string];
     }
 
     public function parseFile(?SplFileObject $fileData): array
@@ -213,6 +260,11 @@ class INGB extends BaseParser
     private static function getFloatValue(string $value): float
     {
         return !empty($value) ? floatval(str_replace(['.', ','], ['', '.'], $value)) : 0;
+    }
+
+    private static function getPredictionFloatValue(string $value): float
+    {
+        return !empty($value) ? floatval(str_replace([','], [''], $value)) : 0;
     }
 
     private static function parseDate($d): bool|DateTime

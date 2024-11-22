@@ -33,6 +33,7 @@ class CommandResultCrudController extends AbstractCrudController
     public function configureFields(string $pageName): iterable
     {
         return [
+            IdField::new('id'),
             DateTimeField::new('date'),
             TextField::new('command'),
             TextField::new('result')->formatValue(static function ($value, ?CommandResult $carrier) {

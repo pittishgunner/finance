@@ -31,13 +31,13 @@ class AccountRepository extends ServiceEntityRepository
     //        ;
     //    }
 
-    //    public function findOneBySomeField($value): ?account
-    //    {
-    //        return $this->createQueryBuilder('a')
-    //            ->andWhere('a.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+        public function findOneByIbanLike($value): ?Account
+        {
+            return $this->createQueryBuilder('a')
+                ->andWhere('a.iban LIKE :val')
+                ->setParameter('val', '%' . $value . '%')
+                ->getQuery()
+                ->getOneOrNullResult()
+            ;
+        }
 }

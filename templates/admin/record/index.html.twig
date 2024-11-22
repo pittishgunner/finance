@@ -1,0 +1,23 @@
+{% extends '@!EasyAdmin/crud/index.html.twig' %}
+{% set debitSum = 0 %}
+{% set creditSum = 0 %}
+
+{% block table_body %}
+    {{ parent() }}
+    {% for entity in entities %}
+        {% if entity.isAccessible %}
+            {% for field in entity.fields %}
+                {% if field.property == 'debit' %}
+                    {% set debitSum = debitSum + field.value %}
+                {% endif %}
+                {% if field.property == 'credit' %}
+                    {% set creditSum = creditSum + field.value %}
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+    {% endfor %}
+    <div id="transactionTotals">
+        Cheltuiel: <span id="debitSum">{{ debitSum }}</span>
+        Venituri: <span id="creditSum">{{ creditSum }}</span>
+    </div>
+{% endblock table_body %}

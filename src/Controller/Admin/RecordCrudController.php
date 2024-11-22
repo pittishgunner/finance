@@ -35,7 +35,7 @@ class RecordCrudController extends AbstractCrudController
         if (!empty($_GET['query'])) {
             yield TextField::new('description')->setDisabled()->setMaxLength(60000);
         } else {
-            yield TextField::new('description')->setDisabled()->setMaxLength(64);
+            yield TextField::new('description')->setDisabled()->setMaxLength(34);
         }
         yield AssociationField::new('category')->setDisabled();
         yield AssociationField::new('subCategory')->setDisabled();
@@ -45,6 +45,7 @@ class RecordCrudController extends AbstractCrudController
             ->formatValue(fn ($value) => json_encode(json_decode($value, true), JSON_PRETTY_PRINT));
         yield TagField::new('tags');
 
+        yield DateTimeField::new('notifiedAt')->onlyOnDetail();
         yield DateTimeField::new('createdAt')->onlyOnDetail();
         yield DateTimeField::new('updatedAt')->onlyOnDetail();
     }
@@ -56,8 +57,8 @@ class RecordCrudController extends AbstractCrudController
             ->setEntityLabelInPlural('Transactions')
             ->setPageTitle(Crud::PAGE_INDEX, 'Transactions')
             ->setDefaultSort(['date' => 'DESC'])
-            ->setPaginatorPageSize(100)
-            //->overrideTemplate('crud/index', 'admin/record/index.html.twig')
+            ->setPaginatorPageSize(500)
+            ->overrideTemplate('crud/index', 'admin/record/index.html.twig')
             //->showEntityActionsInlined()
             ;
     }

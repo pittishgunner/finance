@@ -47,11 +47,11 @@ class Record implements TaggableInterface
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $description = null;
 
-    #[ORM\Column(nullable: true)]
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $details = null;
 
     #[ORM\Column(length: 255)]
-    private string $hash;
+    private ?string $hash = null;
 
     #[ORM\Column(nullable: true)]
     private ?DateTimeImmutable $updatedAt = null;
@@ -61,6 +61,12 @@ class Record implements TaggableInterface
 
     #[ORM\ManyToOne(inversedBy: 'records')]
     private ?SubCategory $subCategory = null;
+
+    #[ORM\ManyToOne(inversedBy: 'records', cascade: ['persist'])]
+    private ?CapturedRequest $capturedRequest = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $notifiedAt = null;
 
     public function getId(): ?int
     {
@@ -168,7 +174,7 @@ class Record implements TaggableInterface
         return $this->hash;
     }
 
-    public function setHash(string $hash): static
+    public function setHash(?string $hash): static
     {
         $this->hash = $hash;
 
@@ -207,6 +213,30 @@ class Record implements TaggableInterface
     public function setSubCategory(?SubCategory $subCategory): static
     {
         $this->subCategory = $subCategory;
+
+        return $this;
+    }
+
+    public function getCapturedRequest(): ?CapturedRequest
+    {
+        return $this->capturedRequest;
+    }
+
+    public function setCapturedRequest(?CapturedRequest $capturedRequest): static
+    {
+        $this->capturedRequest = $capturedRequest;
+
+        return $this;
+    }
+
+    public function getNotifiedAt(): ?\DateTimeImmutable
+    {
+        return $this->notifiedAt;
+    }
+
+    public function setNotifiedAt(?\DateTimeImmutable $notifiedAt): static
+    {
+        $this->notifiedAt = $notifiedAt;
 
         return $this;
     }

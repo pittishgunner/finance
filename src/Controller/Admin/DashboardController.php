@@ -2,12 +2,14 @@
 
 namespace App\Controller\Admin;
 
+use App\Entity\CapturedRequest;
 use App\Entity\Category;
 use App\Entity\CategoryRule;
 use App\Entity\CommandResult;
 use App\Entity\Record;
 use App\Entity\SubCategory;
 use App\Entity\User;
+use App\Parser\INGB;
 use App\Service\RecordsService;
 use DateTime;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
@@ -70,13 +72,15 @@ class DashboardController extends AbstractDashboardController
         ) {
             $from = DateTime::createFromFormat('Y-m-d', $_GET['filters']['date']['value']);
             $to = DateTime::createFromFormat('Y-m-d', $_GET['filters']['date']['value2']);
-            $this->dateRange = [
-                'readable' => $from->format('d M Y') . ' - ' . $to->format('d M Y'),
-                'from' => $_GET['filters']['date']['value'],
-                'to' => $_GET['filters']['date']['value2'],
-            ];
+            if ($from && $to) {
+                $this->dateRange = [
+                    'readable' => $from->format('d M Y') . ' - ' . $to->format('d M Y') ?? '',
+                    'from' => $_GET['filters']['date']['value'],
+                    'to' => $_GET['filters']['date']['value2'],
+                ];
 
-            $session->set('dateRange', $this->dateRange);
+                $session->set('dateRange', $this->dateRange);
+            }
         }
     }
     #[IsGranted('ROLE_ADMIN')]
@@ -169,6 +173,8 @@ class DashboardController extends AbstractDashboardController
         yield MenuItem::linkToCrud('Command results', 'fa fa-terminal', CommandResult::class);
         yield MenuItem::linkToCrud('Users', 'fas fa-users', User::class)
             ->setPermission('ROLE_SUPER_ADMIN');
+        yield MenuItem::linkToCrud('Captured Notifications', 'fas fa-arrow-down-short-wide', CapturedRequest::class)
+            ->setPermission('ROLE_ADMIN');
         yield MenuItem::linkToRoute('React tree','fa-solid fa-bars-staggered', 'admin_react_test');
 
         yield MenuItem::section('External');

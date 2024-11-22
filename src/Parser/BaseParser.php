@@ -2,12 +2,12 @@
 
 namespace App\Parser;
 
+use App\Entity\CapturedRequest;
 use App\Entity\Record;
 use SplFileObject;
 
 class BaseParser
 {
-
     public function __construct(private $attemptedClassName)
     {
 

@@ -19,6 +19,7 @@ framework:
 
     form:
         legacy_error_messages: false
+    ide: "phpstorm://open?file=%%f&line=%%l"
 
 when@test:
     framework:
