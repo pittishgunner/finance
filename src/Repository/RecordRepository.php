@@ -2,7 +2,9 @@
 
 namespace App\Repository;
 
+use App\Entity\Account;
 use App\Entity\Record;
+use DateTime;
 use DateTimeInterface;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Common\Collections\Criteria;
@@ -31,6 +33,22 @@ class RecordRepository extends ServiceEntityRepository
         }
 
         //$qb->setMaxResults(140);
+
+        return $qb->getQuery()->getResult();
+    }
+
+    public function findNotifiedRecords(Account $account, DateTime $dateTime, float $debit = 0, float $credit = 0): array
+    {
+        $qb = $this->createQueryBuilder('r')
+            ->where('r.notifiedAt IS NOT NULL')
+            ->andWhere('r.account = :account')
+            ->setParameter('account', $account)
+            ->andWhere('r.date = :date')
+            ->setParameter('date', $dateTime)
+            ->andWhere('r.debit = :debit')
+            ->setParameter('debit', $debit)
+            ->andWhere('r.credit = :credit')
+            ->setParameter('credit', $credit);
 
         return $qb->getQuery()->getResult();
     }

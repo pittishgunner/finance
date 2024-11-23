@@ -98,6 +98,29 @@ class DashboardController extends AbstractDashboardController
     #[Route('/admin/test_react', name: 'admin_react_test')]
     public function testReact(ChartBuilderInterface $chartBuilder = null): Response
     {
+//        $p = new INGB('INGB');
+//        $r = [
+//            'Ai autorizat tranzactia de 470.79 RON la PENNY HUNED3 4495 C2 din contul 999901181524 in 21-11-2024. Sold: 1,204.3 RON.',
+//            'Suma 10.26 RON a fost creditata in 21-11-2024 in contul 999901181524 - Cumparare POS corectie la APPLE.COM/BILL. Sold: 1,675.09.',
+//            'Suma 72.8 RON a fost debitata in 21-11-2024 din contul 999901181524 - Plata debit direct catre PPC ENERGIE S.A.. Sold: 1,664.83 RON.',
+//            'Ai economisit 2.5 RON prin Round Up.',
+//            'Ai autorizat tranzactia de 39.5 RON la PENNY HUNED3 4495 C3 din contul 999901181524 in 20-11-2024. Sold: 1,740.13.',
+//            'Ai economisit 9.7 RON prin Round Up.',
+//            'Ai autorizat tranzactia de 608.06 RON la RO 0040 Deva din contul 999901181524 in 20-11-2024. Sold: 1,789.33.',
+//            'Ai autorizat tranzactia de 400 RON la Revolut**3887* din contul 999901181524 in 20-11-2024. Sold: 2,397.39.',
+//            'Ai autorizat tranzactia de 183.98 RON la Glovo 19NOV HD2DCL1RR din contul 999908493441 in 19-11-2024. Sold: 169,863.47.',
+//            'Ai economisit 19 RON prin Round Up.',
+//            'Suma 170.04 RON a fost debitata in 21-11-2024 din contul 999901181524 - Transfer Home\'Bank catre Cord Blood Center Storage AG. Sold: 3,514.83 RON.',
+//            'Suma 170.04 RON a fost debitata in 21-11-2024 din contul 999901181524 - Transfer Home\'Bank catre Cord Blood Center Storage AG. Sold: 3,684.87 RON.',
+//            'Apasa aici pentru a aproba sau anula (din Home',
+//            'Tocmai ai incercat sa accesezi Home'
+//        ];
+//        foreach ($r as $s) {
+//            print_r($p->predictRecord($s));
+//        }
+//
+//        exit;
+
         assert(null !== $chartBuilder);
 
         return $this->render('admin/react.html.twig', [
@@ -124,7 +147,6 @@ class DashboardController extends AbstractDashboardController
 
         // return the output, don't use if you used NullOutput()
         $content = $output->fetch();
-
 
         return $this->render('admin/unmatched.html.twig', [
             'content' => $content,

@@ -44,7 +44,7 @@ class CapturedRequest
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $server = null;
 
-    #[ORM\Column(nullable: true)]
+    #[ORM\Column(type: 'datetime_microseconds', nullable: true)]
     private ?\DateTimeImmutable $createdAt = null;
 
     /**

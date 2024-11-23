@@ -28,10 +28,10 @@ class INGB extends BaseParser
         }
 
         $cases = [
-            'plati POS' => '/Ai autorizat tranzactia de (?<debit>(.*)) (?<currency>(\w{3})) la (?<details>(.*)) din contul (?<account>(\d+)) in (?<date>(\d{1,4}-\d{1,2}-\d{2,4})). Sold: (?<balance>(.*))./mi',
-            'intrari diverse' => '/Suma (?<credit>(.*)) (?<currency>(\w{3})) a fost creditata in (?<date>(\d{1,4}-\d{1,2}-\d{2,4})) in contul (?<account>(\d+)) - (?<details>(.*)). Sold: (?<balance>(.*))./mi',
-            'transferuri' => '/Suma (?<debit>(.*)) (?<currency>(\w{3})) a fost debitata in (?<date>(\d{1,4}-\d{1,2}-\d{2,4})) din contul (?<account>(\d+)) - (?<details>(.*)). Sold: (?<balance>(.*))./mi',
-            'round-up' => '/Ai economisit (?<debit>(.*)) (?<currency>(\w{3})) prin (?<details>(.*))./mi',
+            'plati POS' => '/Ai autorizat tranzactia de (?<debit>(.*)) (?<currency>(\w{3})) la (?<description>(.*)) din contul (?<account>(\d+)) in (?<date>(\d{1,4}-\d{1,2}-\d{2,4})). Sold: (?<balance>(.*))./mi',
+            'intrari diverse' => '/Suma (?<credit>(.*)) (?<currency>(\w{3})) a fost creditata in (?<date>(\d{1,4}-\d{1,2}-\d{2,4})) in contul (?<account>(\d+)) - (?<description>(.*)). Sold: (?<balance>(.*))./mi',
+            'transferuri' => '/Suma (?<debit>(.*)) (?<currency>(\w{3})) a fost debitata in (?<date>(\d{1,4}-\d{1,2}-\d{2,4})) din contul (?<account>(\d+)) - (?<description>(.*)). Sold: (?<balance>(.*))./mi',
+            'round-up' => '/Ai economisit (?<debit>(.*)) (?<currency>(\w{3})) prin (?<description>(.*))./mi',
         ];
 
         foreach ($cases as $key => $case) {
@@ -304,6 +304,9 @@ class INGB extends BaseParser
 
         if (empty($key)) {
             $key = array_key_first($details);
+            if ($key === 'notifiedAt') {
+                $key = $details['notification'];
+            }
         }
 
         return [

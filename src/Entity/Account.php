@@ -40,7 +40,7 @@ class Account
     #[ORM\OneToMany(targetEntity: Record::class, mappedBy: 'AccountId', orphanRemoval: true)]
     private Collection $records;
 
-    #[ORM\Column]
+    #[ORM\Column(type: 'datetime_microseconds')]
     private ?DateTimeImmutable $createdAt = null;
 
     /**

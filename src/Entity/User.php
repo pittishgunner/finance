@@ -3,9 +3,9 @@
 namespace App\Entity;
 
 use App\Repository\UserRepository;
+use DateTimeImmutable;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Gedmo\Timestampable\Traits\TimestampableEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
@@ -13,8 +13,6 @@ use Symfony\Component\Security\Core\User\UserInterface;
 #[ORM\Table('`user`')]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
-    use TimestampableEntity;
-
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -49,8 +47,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(nullable: true)]
     private ?string $avatar;
 
+    #[ORM\Column(type: 'datetime_microseconds')]
+    private DateTimeImmutable $createdAt;
+
+    #[ORM\Column(type: 'datetime_microseconds', nullable: true)]
+    private ?DateTimeImmutable $updatedAt = null;
+
     public function __construct()
     {
+        $this->createdAt = new DateTimeImmutable();
     }
 
     public function __toString(): string
@@ -213,5 +218,29 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setAvatar(?string $avatar): void
     {
         $this->avatar = $avatar;
+    }
+
+    public function getCreatedAt(): DateTimeImmutable
+    {
+        return $this->createdAt;
+    }
+
+    public function setCreatedAt(DateTimeImmutable $createdAt): static
+    {
+        $this->createdAt = $createdAt;
+
+        return $this;
+    }
+
+    public function getUpdatedAt(): ?DateTimeImmutable
+    {
+        return $this->updatedAt;
+    }
+
+    public function setUpdatedAt(?DateTimeImmutable $updatedAt): static
+    {
+        $this->updatedAt = $updatedAt;
+
+        return $this;
     }
 }

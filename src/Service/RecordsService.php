@@ -132,13 +132,17 @@ class RecordsService
         if (!empty($predicted['credit'])) {
             $findCriteria['credit'] = $predicted['credit'];
         }
+        if (!empty($predicted['balance'])) {
+            $findCriteria['balance'] = $predicted['balance'];
+        }
         $existingRecord = null;
         $records = $this->recordRepository->findBy($findCriteria, ['id' => 'DESC']);
         foreach ($records as $record) {
-            if (strstr($record->getDescription(), $predicted['details'])) {
+            if (strstr($record->getDescription(), $predicted['description'])) {
                 $existingRecord = $record;
             }
         }
+
         if (null === $existingRecord) {
             foreach ($records as $record) {
                 if ($record->getBalance() === $predicted['balance']) {
@@ -165,9 +169,10 @@ class RecordsService
 
         $details['notifiedAt'] = $decoded['currentTime'];
         $details['notification'] = $decoded['text'];
+        $details['prediction'] = $predicted;
         $existingRecord->setDetails(json_encode($details));
         $existingRecord->setCreatedAt(DateTimeImmutable::createFromMutable($recordDate));
-
+        $existingRecord->setNotifiedAt(DateTimeImmutable::createFromMutable($recordDate));
 
         $this->entityManager->persist($existingRecord);
         $this->entityManager->flush();
@@ -195,12 +200,14 @@ class RecordsService
             $details = [];
             $details['notifiedAt'] = $decoded['currentTime'];
             $details['notification'] = $decoded['text'];
+            $details['prediction'] = $predicted;
             $debit->setCreatedAt(DateTimeImmutable::createFromMutable($recordDate));
             $debit->setDescription($decoded['text']);
         } else {
             $details = json_decode($debit->getDetails(), true);
             $details['notifiedAt'] = $decoded['currentTime'];
             $details['notification'] = $decoded['text'];
+            $details['prediction'] = $predicted;
             $debit->setUpdatedAt(DateTimeImmutable::createFromMutable($recordDate));
         }
         $debit->setDetails(json_encode($details));
@@ -223,12 +230,14 @@ class RecordsService
             $details = [];
             $details['notifiedAt'] = $decoded['currentTime'];
             $details['notification'] = $decoded['text'];
+            $details['prediction'] = $predicted;
             $credit->setCreatedAt(DateTimeImmutable::createFromMutable($recordDate));
             $credit->setDescription($decoded['text']);
         } else {
             $details = json_decode($credit->getDetails(), true);
             $details['notifiedAt'] = $decoded['currentTime'];
             $details['notification'] = $decoded['text'];
+            $details['prediction'] = $predicted;
             $credit->setUpdatedAt(DateTimeImmutable::createFromMutable($recordDate));
         }
         $credit->setDetails(json_encode($details));

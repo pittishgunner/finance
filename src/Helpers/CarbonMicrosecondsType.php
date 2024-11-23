@@ -13,7 +13,7 @@ use Doctrine\DBAL\Types\Type;
 
 class CarbonMicrosecondsType extends Type
 {
-    const TYPENAME = 'datetime';
+    const TYPENAME = 'datetime_microseconds';
 
     public function getSQLDeclaration(array $column, AbstractPlatform $platform): string
     {
@@ -21,9 +21,9 @@ class CarbonMicrosecondsType extends Type
             return 'TIMESTAMP';
         }
         if($platform instanceof PostgreSqlPlatform)
-            return 'TIMESTAMP(6) WITHOUT TIME ZONE';
+            return 'TIMESTAMP(4) WITHOUT TIME ZONE';
         else
-            return 'DATETIME(6)';
+            return 'DATETIME(4)';
     }
 
     public function convertToPHPValue($value, AbstractPlatform $platform)

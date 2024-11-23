@@ -15,7 +15,10 @@ use eduMedia\TagBundle\Entity\TaggableTrait;
 #[ORM\Index(name: 'date_idx', columns: ['date'])]
 #[ORM\Index(name: 'debit_idx', columns: ['debit'])]
 #[ORM\Index(name: 'credit_idx', columns: ['credit'])]
+#[ORM\Index(name: 'balanceidx', columns: ['balance'])]
 #[ORM\Index(name: 'hash_idx', columns: ['hash'])]
+#[ORM\Index(name: 'notified_idx', columns: ['notified_at'])]
+#[ORM\Index(name: 'created_idx', columns: ['created_at'])]
 class Record implements TaggableInterface
 {
     use TaggableTrait;
@@ -29,7 +32,7 @@ class Record implements TaggableInterface
     #[ORM\JoinColumn(nullable: false)]
     private Account $account;
 
-    #[ORM\Column]
+    #[ORM\Column(type: 'datetime_microseconds')]
     private DateTimeImmutable $createdAt;
 
     #[ORM\Column(type: 'date')]
@@ -50,10 +53,10 @@ class Record implements TaggableInterface
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $details = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(type: Types::STRING,length: 255)]
     private ?string $hash = null;
 
-    #[ORM\Column(nullable: true)]
+    #[ORM\Column(type: 'datetime_microseconds', nullable: true)]
     private ?DateTimeImmutable $updatedAt = null;
 
     #[ORM\ManyToOne(inversedBy: 'records')]

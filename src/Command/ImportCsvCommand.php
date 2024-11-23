@@ -52,14 +52,61 @@ class ImportCsvCommand extends LoggableCommand
                 foreach ($records as $record) {
                     $hash = hash('sha256', json_encode($record));
                     $Record = $this->recordRepository->findOneBy(['hash' => $hash]);
-                    if (empty($Record)) {
-                        $Record = new Record();
-                        $Record->setCreatedAt(new DateTimeImmutable());
-                        $new++;
+
+                    if (null === $Record) {
+                        // Search for notified transactions
+                        $ExistingRecords = $this->recordRepository->findNotifiedRecords(
+                            $csvFile['account'],
+                            $record['date'],
+                            $record['debit'],
+                            $record['credit']
+                        );
+                        if (count($ExistingRecords) > 0) {
+                            foreach ($ExistingRecords as $ExistingRecord) {
+                                if (strstr($ExistingRecord->getDescription(), $record['description'])) {
+                                    $Record = $ExistingRecord;
+                                }
+                            }
+                            if (null === $Record) {
+                                foreach ($ExistingRecords as $ExistingRecord) {
+                                    if ($ExistingRecord->getBalance() === $record['balance']) {
+                                        $Record = $ExistingRecord;
+                                    }
+                                }
+                            }
+                            if (null === $Record) {
+
+                            }
+                            dump($Record);
+                            /*if (count($ExistingRecords) > 1) {
+                                foreach ($ExistingRecords as $ExistingRecord) {
+                                    if (strstr($ExistingRecord->getDescription(), $record['description'])) {
+                                        $Record = $ExistingRecord;
+                                    }
+                                }
+                            } else {
+                                $Record = $ExistingRecords[0];
+                            }
+                            if (null !== $Record) {
+                                $Record->setUpdatedAt(new DateTimeImmutable());
+                                $record['details'] = array_merge($record['details'], json_decode($Record->getDetails(), true));
+                                $updated++;
+                            } else {
+                                $Record = new Record();
+                                $Record->setCreatedAt(new DateTimeImmutable());
+                                $new++;
+                            }*/
+                        } else {
+                            $Record = new Record();
+                            $Record->setCreatedAt(new DateTimeImmutable());
+                            $new++;
+                        }
                     } else {
                         $Record->setUpdatedAt(new DateTimeImmutable());
                         $updated++;
                     }
+
+                    return Command::SUCCESS;
                     $Record->setAccount($csvFile['account']);
                     $Record->setDate($record['date']);
                     $Record->setDebit($record['debit']);
@@ -71,7 +118,7 @@ class ImportCsvCommand extends LoggableCommand
 
                     $this->entityManager->persist($Record);
                 }
-
+                exit();
                 $this->entityManager->flush();
                 $this->loggableOutput->writeln(' - - Imported ' . $new . '/' . $updated . ' new/updated records.');
 
