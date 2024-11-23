@@ -48,7 +48,9 @@ class RecordsService
                 $prepared[$parsedData['key']] = $parsedData;
             }
         }
-        asort($prepared);
+
+        uasort($prepared, fn($a, $b) => $b['count'] <=> $a['count']);
+        //asort($prepared);
 
         return $prepared;
     }

@@ -53,7 +53,7 @@ class Record implements TaggableInterface
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $details = null;
 
-    #[ORM\Column(type: Types::STRING,length: 255)]
+    #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
     private ?string $hash = null;
 
     #[ORM\Column(type: 'datetime_microseconds', nullable: true)]
@@ -66,9 +66,10 @@ class Record implements TaggableInterface
     private ?SubCategory $subCategory = null;
 
     #[ORM\ManyToOne(inversedBy: 'records', cascade: ['persist'])]
+    #[ORM\JoinColumn(nullable: true)]
     private ?CapturedRequest $capturedRequest = null;
 
-    #[ORM\Column(nullable: true)]
+    #[ORM\Column(type: 'datetime_microseconds', nullable: true)]
     private ?\DateTimeImmutable $notifiedAt = null;
 
     public function getId(): ?int

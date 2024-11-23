@@ -38,6 +38,9 @@ class MissingRecord
     #[ORM\Column]
     private ?bool $solved = false;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $hash = null;
+
     public function __construct()
     {
         $this->matchedRecords = new ArrayCollection();
@@ -128,6 +131,18 @@ class MissingRecord
     public function setSolved(bool $solved): static
     {
         $this->solved = $solved;
+
+        return $this;
+    }
+
+    public function getHash(): ?string
+    {
+        return $this->hash;
+    }
+
+    public function setHash(?string $hash): static
+    {
+        $this->hash = $hash;
 
         return $this;
     }

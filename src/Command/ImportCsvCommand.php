@@ -5,6 +5,7 @@ namespace App\Command;
 use App\Entity\Account;
 use App\Entity\CommandResult;
 use App\Entity\ImportedFile;
+use App\Entity\MissingRecord;
 use App\Entity\Record;
 use App\Helpers\Parser;
 use App\Parser\BaseParser;
@@ -47,7 +48,7 @@ class ImportCsvCommand extends LoggableCommand
                 }
 
                 $this->loggableOutput->writeln(' - Crunched CSV file: ' . $csvFile['file']->getRealPath() . ' ' . count($records) . ' Records parsed. Importing');
-                $new = $updated = 0;
+                $new = $updated = $ignored = 0;
 
                 foreach ($records as $record) {
                     $hash = hash('sha256', json_encode($record));
@@ -62,40 +63,42 @@ class ImportCsvCommand extends LoggableCommand
                             $record['credit']
                         );
                         if (count($ExistingRecords) > 0) {
-                            foreach ($ExistingRecords as $ExistingRecord) {
-                                if (strstr($ExistingRecord->getDescription(), $record['description'])) {
-                                    $Record = $ExistingRecord;
-                                }
-                            }
-                            if (null === $Record) {
-                                foreach ($ExistingRecords as $ExistingRecord) {
-                                    if ($ExistingRecord->getBalance() === $record['balance']) {
-                                        $Record = $ExistingRecord;
-                                    }
-                                }
-                            }
-                            if (null === $Record) {
-
-                            }
-                            dump($Record);
-                            /*if (count($ExistingRecords) > 1) {
+                            if (count($ExistingRecords) === 1) {
+                                $Record = $ExistingRecords[0];
+                            } else {
                                 foreach ($ExistingRecords as $ExistingRecord) {
                                     if (strstr($ExistingRecord->getDescription(), $record['description'])) {
                                         $Record = $ExistingRecord;
                                     }
                                 }
-                            } else {
-                                $Record = $ExistingRecords[0];
+                                if (null === $Record) {
+                                    foreach ($ExistingRecords as $ExistingRecord) {
+                                        if ($ExistingRecord->getBalance() === $record['balance']) {
+                                            $Record = $ExistingRecord;
+                                        }
+                                    }
+                                }
+
+                                if (null === $Record) {
+                                    $MissingRecord = new MissingRecord();
+                                    $MissingRecord->setCreatedAt(new DateTimeImmutable());
+                                    $MissingRecord->setAccount($csvFile['account']);
+                                    $MissingRecord->setParsedRecord(json_encode($record));
+                                    $MissingRecord->setHash(hash('sha256', json_encode($record)));
+                                    foreach ($ExistingRecords as $ExistingRecord) {
+                                        $MissingRecord->addMatchedRecord($ExistingRecord);
+                                    }
+
+                                    $this->entityManager->persist($MissingRecord);
+
+                                    $ignored++;
+                                    continue;
+                                }
                             }
-                            if (null !== $Record) {
-                                $Record->setUpdatedAt(new DateTimeImmutable());
-                                $record['details'] = array_merge($record['details'], json_decode($Record->getDetails(), true));
-                                $updated++;
-                            } else {
-                                $Record = new Record();
-                                $Record->setCreatedAt(new DateTimeImmutable());
-                                $new++;
-                            }*/
+
+                            $Record->setUpdatedAt(new DateTimeImmutable());
+                            $record['details'] = array_merge($record['details'], json_decode($Record->getDetails(), true));
+                            $updated++;
                         } else {
                             $Record = new Record();
                             $Record->setCreatedAt(new DateTimeImmutable());
@@ -105,8 +108,6 @@ class ImportCsvCommand extends LoggableCommand
                         $Record->setUpdatedAt(new DateTimeImmutable());
                         $updated++;
                     }
-
-                    return Command::SUCCESS;
                     $Record->setAccount($csvFile['account']);
                     $Record->setDate($record['date']);
                     $Record->setDebit($record['debit']);
@@ -118,9 +119,11 @@ class ImportCsvCommand extends LoggableCommand
 
                     $this->entityManager->persist($Record);
                 }
-                exit();
+
+                $this->loggableOutput->writeln(' - - Imported ' . $new . '/' . $updated . '/' . $ignored . ' new/updated/ignored records.');
+                //return Command::SUCCESS;
+
                 $this->entityManager->flush();
-                $this->loggableOutput->writeln(' - - Imported ' . $new . '/' . $updated . ' new/updated records.');
 
                 $ImportedFile = new ImportedFile();
                 $ImportedFile->setAccount($csvFile['account']);

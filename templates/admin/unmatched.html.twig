@@ -1,7 +1,11 @@
 {% extends '@EasyAdmin/page/content.html.twig' %}
 
 {% block page_title %}
-    {{ records|length }} Unique Unmatched Records
+    {% set total = 0 %}
+    {% for record in records %}
+        {% set total = total + record.count %}
+    {% endfor %}
+    {{ records|length }} Unique - {{ total }} Total Unmatched Records
 {% endblock %}
 
 {% block main %}

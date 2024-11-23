@@ -44,7 +44,7 @@ class RecordRepository extends ServiceEntityRepository
             ->andWhere('r.account = :account')
             ->setParameter('account', $account)
             ->andWhere('r.date = :date')
-            ->setParameter('date', $dateTime)
+            ->setParameter('date', $dateTime->format('Y-m-d'))
             ->andWhere('r.debit = :debit')
             ->setParameter('debit', $debit)
             ->andWhere('r.credit = :credit')
