@@ -1,2 +1,10 @@
 webpush:
   logger: Psr\Log\LoggerInterface
+  vapid:
+    enabled: true
+    subject: '%env(APP_ROOT_URI)%'
+    token_lifetime: 'now +1 minute'
+    lcobucci:
+      enabled: true
+      public_key: '%env(VAPID_PUBLIC_KEY)%'
+      private_key: '%env(VAPID_PRIVATE_KEY)%'

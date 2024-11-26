@@ -231,6 +231,9 @@
             "config/packages/sensio_framework_extra.yaml"
         ]
     },
+    "spomky-labs/pwa-bundle": {
+        "version": "1.2.4"
+    },
     "spomky-labs/web-push-bundle": {
         "version": "3.1.2"
     },
@@ -251,6 +254,21 @@
     },
     "symfony/asset": {
         "version": "v6.0.1"
+    },
+    "symfony/asset-mapper": {
+        "version": "6.4",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "6.4",
+            "ref": "5ad1308aa756d58f999ffbe1540d1189f5d7d14a"
+        },
+        "files": [
+            "./assets/app.js",
+            "./assets/styles/app.css",
+            "./config/packages/asset_mapper.yaml",
+            "./importmap.php"
+        ]
     },
     "symfony/cache": {
         "version": "v6.0.1"
@@ -396,6 +414,15 @@
     },
     "symfony/orm-pack": {
         "version": "v2.0.0"
+    },
+    "symfony/panther": {
+        "version": "2.1",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "1.0",
+            "ref": "673836afb0eac2b0ec36c44f2ff0379e5a4b2177"
+        }
     },
     "symfony/password-hasher": {
         "version": "v6.0.1"

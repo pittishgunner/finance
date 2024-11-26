@@ -3,6 +3,7 @@
 
 {% block head_metas %}
     {{ parent() }}
+    {{ pwa() }}
     <link rel="icon" type="image/png" href="/favicon.png" sizes="32x32">
     <script src="https://cdn.jsdelivr.net/gh/alumuko/vanilla-datetimerange-picker@latest/dist/vanilla-datetimerange-picker.js"></script>
 {% endblock %}
@@ -25,8 +26,10 @@
 
 {% block sidebar %}
     {{ parent() }}
-    <div style="width: 130px; position: fixed; bottom: 40px; left: 50px;">
-    Munteanu Finance
+    <div style="width:210px; position: fixed; bottom: 50px; left: 10px; text-align: center;">
+        <button class="btn btn-info btn-lg px-4" id="push-subscription-button">Push notifications !</button><br/>
+    Munteanu Finance<br/><br/>
+        <button class="btn btn-success btn-lg px-4" id="send-push-button">Send a push notification</button>
 {#        {{ dump(filters) }}#}
     </div>
 {% endblock %}
