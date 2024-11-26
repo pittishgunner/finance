@@ -2,7 +2,6 @@
 
 namespace App\Parser;
 
-use App\Entity\CapturedRequest;
 use App\Entity\Record;
 use SplFileObject;
 

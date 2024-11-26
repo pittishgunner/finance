@@ -28,4 +28,5 @@ return [
     Symfony\UX\React\ReactBundle::class => ['all' => true],
     Insitaction\EasyAdminFieldsBundle\EasyAdminFieldsBundle::class => ['all' => true],
     SymfonyBundles\JsonRequestBundle\JsonRequestBundle::class => ['all' => true],
+    WebPush\Bundle\WebPushBundle::class => ['all' => true],
 ];

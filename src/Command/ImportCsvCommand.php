@@ -3,12 +3,11 @@
 namespace App\Command;
 
 use App\Entity\Account;
-use App\Entity\CommandResult;
 use App\Entity\ImportedFile;
-use App\Entity\MissingRecord;
 use App\Entity\Record;
 use App\Helpers\Parser;
 use App\Parser\BaseParser;
+use DateTime;
 use DateTimeImmutable;
 use Exception;
 use SplFileInfo;
@@ -40,28 +39,38 @@ class ImportCsvCommand extends LoggableCommand
                     continue;
                 }
                 $this->loggableOutput->writeln('Crunching CSV file: ' . $csvFile['file']->getRealPath());
-                $records = $csvFile['parser']->parseFile($csvFile['file']);
-                if (empty($records)) {
+                $parsedRecords = $csvFile['parser']->parseFile($csvFile['file']);
+                if (empty($parsedRecords)) {
                     $this->loggableOutput->writeln(' - No records parsed. Skipping');
                     $this->loggableOutput->writeln(' ');
                     continue;
                 }
-
-                $this->loggableOutput->writeln(' - Crunched CSV file: ' . $csvFile['file']->getRealPath() . ' ' . count($records) . ' Records parsed. Importing');
-                $new = $updated = $ignored = 0;
-
-                foreach ($records as $record) {
+                $recordsByDate = [];
+                $totalRecords = 0;
+                foreach ($parsedRecords as $record) {
                     $hash = hash('sha256', json_encode($record));
-                    $Record = $this->recordRepository->findOneBy(['hash' => $hash]);
+                    $record['hash'] = $hash;
+                    $recordsByDate[$record['date']][] = $record;
+                    $totalRecords++;
+                }
+                ksort($recordsByDate);
+                $this->loggableOutput->writeln(
+                    ' - Crunched CSV file: ' . $csvFile['file']->getFilename() . ' ' . count($recordsByDate) . ' Days and ' . $totalRecords .
+                    ' Records parsed. Checking for already notified records'
+                );
 
-                    if (null === $Record) {
-                        // Search for notified transactions
-                        $ExistingRecords = $this->recordRepository->findNotifiedRecords(
+                // If exactly one record is found, store the exact transaction date
+                // and delete all notified records AND unreconciled for specific date
+                // Exactly one record is needed to avoid double payments with exact same date, amount and description
+                foreach ($recordsByDate as $date => $records) {
+                    foreach ($records as $key => $record) {
+                        $ExistingRecords = $this->recordRepository->findNotifiedAndUnreconciledRecords(
                             $csvFile['account'],
-                            $record['date'],
+                            DateTime::createFromFormat('Y-m-d', $record['date']),
                             $record['debit'],
                             $record['credit']
                         );
+                        $Record = null;
                         if (count($ExistingRecords) > 0) {
                             if (count($ExistingRecords) === 1) {
                                 $Record = $ExistingRecords[0];
@@ -78,50 +87,45 @@ class ImportCsvCommand extends LoggableCommand
                                         }
                                     }
                                 }
-
-                                if (null === $Record) {
-                                    $MissingRecord = new MissingRecord();
-                                    $MissingRecord->setCreatedAt(new DateTimeImmutable());
-                                    $MissingRecord->setAccount($csvFile['account']);
-                                    $MissingRecord->setParsedRecord(json_encode($record));
-                                    $MissingRecord->setHash(hash('sha256', json_encode($record)));
-                                    foreach ($ExistingRecords as $ExistingRecord) {
-                                        $MissingRecord->addMatchedRecord($ExistingRecord);
-                                    }
-
-                                    $this->entityManager->persist($MissingRecord);
-
-                                    $ignored++;
-                                    continue;
-                                }
                             }
-
-                            $Record->setUpdatedAt(new DateTimeImmutable());
-                            $record['details'] = array_merge($record['details'], json_decode($Record->getDetails(), true));
-                            $updated++;
-                        } else {
-                            $Record = new Record();
-                            $Record->setCreatedAt(new DateTimeImmutable());
-                            $new++;
                         }
-                    } else {
-                        $Record->setUpdatedAt(new DateTimeImmutable());
-                        $updated++;
+                        if (null !== $Record) {
+                            $recordsByDate[$date][$key]['notifiedAt'] = $Record->getNotifiedAt();
+                        }
                     }
-                    $Record->setAccount($csvFile['account']);
-                    $Record->setDate($record['date']);
-                    $Record->setDebit($record['debit']);
-                    $Record->setCredit($record['credit']);
-                    $Record->setBalance($record['balance']);
-                    $Record->setDescription($record['description']);
-                    $Record->setDetails(json_encode($record['details']));
-                    $Record->setHash($hash);
 
-                    $this->entityManager->persist($Record);
+                    $this->recordRepository->deleteNotifiedAndUnreconciledRecordsByDateAndAccount($date, $csvFile['account']);
                 }
 
-                $this->loggableOutput->writeln(' - - Imported ' . $new . '/' . $updated . '/' . $ignored . ' new/updated/ignored records.');
-                //return Command::SUCCESS;
+                foreach ($recordsByDate as $date => $records) {
+                    $dateTime = DateTime::createFromFormat('Y-m-d', $date);
+                    foreach ($records as $record) {
+                        $hash = $record['hash'];
+                        $Record = $this->recordRepository->findOneBy(['hash' => $hash]);
+                        if (null === $Record) {
+                            $Record = new Record();
+                            $Record->setCreatedAt(new DateTimeImmutable());
+                            $this->created++;
+                        } else {
+                            $Record->setUpdatedAt(new DateTimeImmutable());
+                            $this->updated++;
+                        }
+                        $Record->setAccount($csvFile['account']);
+                        $Record->setDate($dateTime);
+                        $Record->setDebit($record['debit']);
+                        $Record->setCredit($record['credit']);
+                        $Record->setBalance($record['balance']);
+                        $Record->setDescription($record['description']);
+                        $Record->setDetails(json_encode($record['details']));
+                        $Record->setHash($hash);
+                        if (isset($record['notifiedAt'])) {
+                            $Record->setNotifiedAt($record['notifiedAt']);
+                            $Record->setReconciled(true);
+                        }
+
+                        $this->entityManager->persist($Record);
+                    }
+                }
 
                 $this->entityManager->flush();
 

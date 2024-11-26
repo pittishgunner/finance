@@ -4,15 +4,52 @@ namespace App\Entity;
 
 use App\Repository\UserRepository;
 use DateTimeImmutable;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
+use WebPush\Notification;
 
 #[ORM\Entity(UserRepository::class)]
 #[ORM\Table('`user`')]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
+    #[ORM\OneToMany(targetEntity: Subscription::class, mappedBy: 'user')]
+    private Collection $subscriptions;
+    private ArrayCollection $notifications;
+
+    public function __construct()
+    {
+        $this->notifications = new ArrayCollection();
+        $this->createdAt = new DateTimeImmutable();
+    }
+
+    /**
+     * @return Notification[]
+     */
+    public function getSubscriptions(): array
+    {
+        return $this->notifications->toArray();
+    }
+
+    public function addSubscription(Subscription $subscription): self
+    {
+        $subscription->setUser($this);
+        $this->subscriptions->add($subscription);
+
+        return $this;
+    }
+
+    public function removeSubscription(Subscription $subscription): self
+    {
+        $subscription->setUser(null);
+        $this->subscriptions->removeElement($subscription);
+
+        return $this;
+    }
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -52,11 +89,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(type: 'datetime_microseconds', nullable: true)]
     private ?DateTimeImmutable $updatedAt = null;
-
-    public function __construct()
-    {
-        $this->createdAt = new DateTimeImmutable();
-    }
 
     public function __toString(): string
     {

@@ -26,7 +26,7 @@ class BTRL extends BaseParser
                 }
                 $date = DateTime::createFromFormat('Y-m-d', $line[0]);
                 $data[] = [
-                    'date' => $date,
+                    'date' => $date->format('Y-m-d'),
                     'debit' => abs(self::getFloatValue($line[4])),
                     'credit' => abs(self::getFloatValue($line[5])),
                     'balance' => abs(self::getFloatValue($line[6])),

@@ -22,7 +22,13 @@
         width: 100px;
         margin: 0 0 4px 0;
     }
+}
 
-
-
+#unmatchedWrapper {
+    .ts-dropdown {
+        height:420px;
+    }
+    .ts-dropdown-content {
+        max-height: 420px;
+    }
 }

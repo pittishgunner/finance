@@ -2,23 +2,20 @@
 
 namespace App\Controller\Admin;
 
-use App\Entity\CapturedRequest;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Entity\Notification;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Filters;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
-use EasyCorp\Bundle\EasyAdminBundle\Field\ArrayField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\CodeEditorField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateTimeField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGenerator;
-use PhpParser\Node\Expr\Yield_;
 
-class CapturedRequestCrudController extends AbstractCrudController
+class NotificationCrudController extends AbstractCrudController
 {
     public function __construct(private AdminUrlGenerator $adminUrlGenerator)
     {
@@ -26,7 +23,7 @@ class CapturedRequestCrudController extends AbstractCrudController
     }
     public static function getEntityFqcn(): string
     {
-        return CapturedRequest::class;
+        return Notification::class;
     }
 
     public function configureFields(string $pageName): iterable
@@ -34,42 +31,24 @@ class CapturedRequestCrudController extends AbstractCrudController
         yield IdField::new('id')->onlyOnIndex();
         yield DateTimeField::new('createdAt')
             ->setDisabled();
-        yield TextField::new('source');
+        yield DateTimeField::new('originalTime')
+            ->setDisabled();
+        yield DateTimeField::new('sentAt')->onlyOnDetail();
+        yield DateTimeField::new('updatedAt')->onlyOnDetail();
+        yield TextField::new('source')
+            ->onlyOnDetail();
         yield TextField::new('message');
+        yield TextField::new('result')
+            ->renderAsHtml();
         yield CodeEditorField::new('content')
            ->setLanguage('js')
            ->formatValue(fn ($value) => json_encode(json_decode($value, true), JSON_PRETTY_PRINT))
            ->onlyOnDetail();
-        yield TextField::new('ip');
-        yield CodeEditorField::new('request')->setLabel('Notification Parameters')
-            ->setLanguage('js')
-            ->formatValue(fn ($value) => json_encode(json_decode($value, true), JSON_PRETTY_PRINT))
-            ->onlyOnDetail();
+        yield TextField::new('ip')->onlyOnDetail();
         yield CodeEditorField::new('headers')->setLabel('Headers')
             ->setLanguage('js')
             ->formatValue(fn ($value) => json_encode(json_decode($value, true), JSON_PRETTY_PRINT))
             ->onlyOnDetail();
-        yield CodeEditorField::new('server')->setLabel('Server Data')
-            ->setLanguage('js')
-            ->formatValue(fn ($value) => json_encode(json_decode($value, true), JSON_PRETTY_PRINT))
-            ->onlyOnDetail();
-        $adminUrlGenerator = $this->adminUrlGenerator;
-
-        yield AssociationField::new('records')->setLabel('Records created/updated')
-           ->formatValue(static function ($records) use($adminUrlGenerator) {
-               $r = '';
-               foreach ($records as $record) {
-                   $r .='<a title="' . $record->getDescription() . '" href="' . $adminUrlGenerator
-                       ->unsetAll()
-                       ->setController(RecordCrudController::class)
-                       ->setAction(Action::DETAIL)
-                       ->setEntityId($record->getId())
-                       ->generateUrl() . '">'. $record->getId() . '</a> ';
-               }
-
-               return $r;
-            })
-        ;
     }
 
     public function configureCrud(Crud $crud): Crud
@@ -86,8 +65,8 @@ class CapturedRequestCrudController extends AbstractCrudController
     {
         $showJsonAction = Action::new('showJson', 'Show json', 'fa fa-magnifying-glass text-success')
             ->addCssClass('text-success')
-            ->linkToUrl(static function(CapturedRequest $capturedRequest) {
-                return '#/CapturedRequest/getContent/' . $capturedRequest->getId();
+            ->linkToUrl(static function(Notification $notification) {
+                return '#/Notification/getContent/' . $notification->getId();
             })
             ->setHtmlAttributes([
                 'data-action' => 'click->json-modal#openJson',
@@ -109,6 +88,7 @@ class CapturedRequestCrudController extends AbstractCrudController
         return parent::configureFilters($filters)
             ->add('source')
             ->add('message')
+            ->add('result')
             ->add('createdAt')
             ->add('ip')
             ->add('content');

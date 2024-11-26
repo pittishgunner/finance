@@ -2,20 +2,24 @@
 
 namespace App\Service;
 
-use App\Entity\CapturedRequest;
+use App\Controller\Admin\RecordCrudController;
+use App\Entity\Notification;
 use App\Entity\Record;
 use App\Helpers\Parser;
 use App\Repository\AccountRepository;
 use App\Repository\CategoryRuleRepository;
 use App\Repository\RecordRepository;
+use App\Repository\UserRepository;
 use DateTime;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
+use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
+use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGenerator;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Component\Console\Input\ArrayInput;
-use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Output\NullOutput;
 use Symfony\Component\HttpKernel\KernelInterface;
+use WebPush\WebPush;
 
 class RecordsService
 {
@@ -24,6 +28,10 @@ class RecordsService
         private RecordRepository       $recordRepository,
         private CategoryRuleRepository $categoryRuleRepository,
         private AccountRepository      $accountRepository,
+        private UserRepository         $userRepository,
+        private KernelInterface $kernel,
+        private WebPush $webPush,
+        private AdminUrlGenerator $adminUrlGenerator,
     ) {}
 
 
@@ -77,16 +85,79 @@ class RecordsService
     }
 
     /**
-     * This method should return false to ignore and not save the CapturedRequest or
-     * an empty array so CapturedRequest is still saved but without a Record connection or
+     * This method should return false to ignore and not save the Notification or
+     * a string to only set the result or
      * a non-empty array for Records that were added
      *
-     * @param CapturedRequest $capturedRequest
-     * @return bool|Record[]
+     * @return bool|string|Record[]
      */
-    public function addRecordsByNotification(CapturedRequest $capturedRequest): bool|array
+    public function captureNotification(string $source = '', string $message = '', string $content = '', string $ip = '', array $headers = []): bool|string|array
     {
-        switch ($capturedRequest->getSource()) {
+        $Notification = new Notification();
+        $Notification->setCreatedAt(new DateTimeImmutable());
+        $decoded = json_decode($content, true);
+        if (!empty($decoded['currentTime'])) {
+            $Notification->setOriginalTime( DateTime::createFromFormat('Y-m-d H:i:s.u', $decoded['currentTime']));
+        }
+        $Notification->setSource($source);
+        $Notification->setMessage($message);
+        $Notification->setContent($content);
+        $Notification->setIp($ip);
+        $Notification->setHeaders(json_encode($headers));
+
+        $Records = $this->addRecordsByNotification($Notification);
+
+        if ($Records !== false) {
+            $result = '';
+            if (is_string($Records)) {
+                $result = $Records;
+            } else {
+                if (count($Records) > 0) {
+                    set_time_limit(0);
+                    $application = new Application($this->kernel);
+                    $application->setAutoExit(false);
+
+                    $input = new ArrayInput([
+                        'command' => 'assign-categories',
+                        '--force' => 'false',
+                    ]);
+
+                    $output = new NullOutput();
+                    $application->run($input, $output);
+                    $result = 'Added ';
+                    foreach ($Records as $Record) {
+                        $url = str_replace('http://localhost/', '/', $this->adminUrlGenerator
+                            ->unsetAll()
+                            ->setController(RecordCrudController::class)
+                            ->setAction(Action::DETAIL)
+                            ->setEntityId($Record->getId())
+                            ->generateUrl());
+
+                        $result .= '<a title="' . $Record->getDescription() . '" href="' . $url . '">' . $Record->getId() . '</a> ';
+                    }
+                }
+            }
+            $Notification->setResult($result);
+
+            $this->entityManager->persist($Notification);
+            $this->entityManager->flush();
+        }
+
+        return $Records;
+    }
+
+    /**
+     * This method should return false to ignore and not save the Notification or
+     * a string to only set the result or
+     * a non-empty array for Records that were added
+     *
+     * @param Notification $notification
+     * @return bool|string|Record[]
+     */
+    public function addRecordsByNotification(Notification $notification): bool|string|array
+    {
+
+        switch ($notification->getSource()) {
             case 'ro.ing.mobile.banking.android.activity':
                 $parser = Parser::getBankCsvParser('----INGB');
                 break;
@@ -96,10 +167,28 @@ class RecordsService
         }
         $data = [];
         if (method_exists($parser, 'predictRecord')) {
-            $decoded = json_decode($capturedRequest->getContent(), true);
+            $decoded = json_decode($notification->getContent(), true);
             if (empty($decoded['text']) || empty($decoded['currentTime'])) {
                 return false;
             }
+
+//            $user = $this->userRepository->find(2);
+//            $subscriptions = $user->getSubscriptions();
+            //$notification = Notification::create();
+         /*       //->highUrgency()
+                ->withPayload($decoded['text']);
+            $subscription = Subscription::createFromString($decoded['text']);
+
+            $statusReport = $this->webPush->send($notification, $subscription);
+
+            /*
+            foreach ($subscriptions as $subscription) {
+                $report = $this->webPush->send($notification, $subscription);
+                if ($report->isSubscriptionExpired()) {
+                    //...Remove this subscription
+                }
+            }
+            */
 
             $predicted = $parser->predictRecord($decoded['text']);
             if (isset($predicted['ignored'])) {
@@ -121,9 +210,16 @@ class RecordsService
         return $data;
     }
 
-    private function processRecordByNotification(array $decoded, array $predicted, DateTime $recordDate): array
+    private function processRecordByNotification(array $decoded, array $predicted, DateTime $recordDate): string|array
     {
         $account = $this->accountRepository->findOneByIbanLike($predicted['account']);
+        if (null === $account) {
+            return 'WARNING! Could not match account';
+        }
+        if (!empty($predicted['currency']) && $predicted['currency'] !== $account->getCurrency()) {
+            return 'WARNING! Could not match currency';
+        }
+
         $findCriteria = [
             'account' => $account,
             'date' => $recordDate,
@@ -153,27 +249,22 @@ class RecordsService
             }
         }
 
-        if (null === $existingRecord) {
-            $existingRecord = new Record();
-            $existingRecord->setDescription($predicted['string']);
-            $details = [];
-        } else {
-            $details = json_decode($existingRecord->getDetails(), true);
-            $existingRecord->setDescription($existingRecord->getDescription() . "\n" . $predicted['string']);
+        if (null !== $existingRecord) {
+            return 'WARNING! Duplicated record.';
         }
+        $details = [];
+        $details['notifiedAt'] = $decoded['currentTime'];
+        $details['notification'] = $decoded['text'];
+        $details['prediction'] = $predicted;
 
+        $existingRecord = new Record();
+        $existingRecord->setDescription($predicted['string']);
         $existingRecord->setAccount($account);
         $existingRecord->setDate($recordDate);
         $existingRecord->setDebit($predicted['debit'] ?? 0);
         $existingRecord->setCredit($predicted['credit'] ?? 0);
         $existingRecord->setBalance($predicted['balance'] ?? 0);
-
-
-        $details['notifiedAt'] = $decoded['currentTime'];
-        $details['notification'] = $decoded['text'];
-        $details['prediction'] = $predicted;
         $existingRecord->setDetails(json_encode($details));
-        $existingRecord->setCreatedAt(DateTimeImmutable::createFromMutable($recordDate));
         $existingRecord->setNotifiedAt(DateTimeImmutable::createFromMutable($recordDate));
 
         $this->entityManager->persist($existingRecord);
@@ -183,7 +274,7 @@ class RecordsService
             $existingRecord,
         ];
     }
-    private function processRoundUp(array $decoded, array $predicted, DateTime $recordDate): array
+    private function processRoundUp(array $decoded, array $predicted, DateTime $recordDate): string|array
     {
         $debitAccount = $this->accountRepository->findOneBy(['iban' => 'RO64INGB5649999901181524']);
         $debit = $this->recordRepository->findOneBy([
@@ -206,11 +297,7 @@ class RecordsService
             $debit->setCreatedAt(DateTimeImmutable::createFromMutable($recordDate));
             $debit->setDescription($decoded['text']);
         } else {
-            $details = json_decode($debit->getDetails(), true);
-            $details['notifiedAt'] = $decoded['currentTime'];
-            $details['notification'] = $decoded['text'];
-            $details['prediction'] = $predicted;
-            $debit->setUpdatedAt(DateTimeImmutable::createFromMutable($recordDate));
+            return 'WARNING! Duplicated Round Up Debit';
         }
         $debit->setDetails(json_encode($details));
         $debit->setNotifiedAt(DateTimeImmutable::createFromMutable($recordDate));
@@ -236,11 +323,7 @@ class RecordsService
             $credit->setCreatedAt(DateTimeImmutable::createFromMutable($recordDate));
             $credit->setDescription($decoded['text']);
         } else {
-            $details = json_decode($credit->getDetails(), true);
-            $details['notifiedAt'] = $decoded['currentTime'];
-            $details['notification'] = $decoded['text'];
-            $details['prediction'] = $predicted;
-            $credit->setUpdatedAt(DateTimeImmutable::createFromMutable($recordDate));
+            return 'WARNING! Duplicated Round Up Credit';
         }
         $credit->setDetails(json_encode($details));
         $credit->setNotifiedAt(DateTimeImmutable::createFromMutable($recordDate));

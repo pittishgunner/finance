@@ -2,15 +2,11 @@
 
 namespace App\Controller;
 
-use App\Entity\CapturedRequest;
 use App\Service\RecordsService;
 use DateTimeImmutable;
 use DateTimeInterface;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\Console\Input\ArrayInput;
-use Symfony\Component\Console\Output\NullOutput;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\KernelInterface;
@@ -52,46 +48,23 @@ class SiteController extends AbstractController
             }
             fclose($rawContent);
         }
-
-
-        $CapturedRequest = new CapturedRequest();
-        $CapturedRequest->setCreatedAt($dateTime);
-        $CapturedRequest->setIp($ip);
-        $CapturedRequest->setContent($content);
-        $CapturedRequest->setHeaders(json_encode(getallheaders()));
-        $CapturedRequest->setSource($_REQUEST['source'] ?? null);
-        $CapturedRequest->setMessage($_REQUEST['message'] ?? null);
-        $CapturedRequest->setRequest(json_encode($_REQUEST));
-        $CapturedRequest->setServer(json_encode($_SERVER));
-
-        $Records = $this->recordsService->addRecordsByNotification($CapturedRequest);
-
-        if ($Records !== false) {
-            foreach ($Records as $record) {
-                $CapturedRequest->addRecord($record);
-            }
-            if (count($Records) > 0) {
-                set_time_limit(0);
-                $application = new Application($this->kernel);
-                $application->setAutoExit(false);
-
-                $input = new ArrayInput([
-                    'command' => 'assign-categories',
-                    '--force' => 'false',
-                ]);
-
-                $output = new NullOutput();
-                $application->run($input, $output);
-            }
-
-            $this->entityManager->persist($CapturedRequest);
-            $this->entityManager->flush();
+        $message = $_REQUEST['message'] ?? null;
+        $source = $_REQUEST['source'] ?? null;
+        $decoded = json_decode($content, true);
+        if (!empty($decoded['text'])) {
+            $message = $decoded['text'];
         }
+        $headers = [];
+        if (function_exists('getallheaders')) {
+            $headers = getallheaders();
+        }
+
+        $Records = $this->recordsService->captureNotification($source, $message, $content, $ip, $headers);
 
         return new JsonResponse([
             'status' => 'ok',
             'date' => $dateTime->format(DateTimeInterface::ATOM),
-            'added' => $Records === false ? 'ignored' : 'matched count: ' . count($Records),
+            'added' => $Records === false ? 'ignored' : ( is_string($Records) ? $Records : 'matched count: ' . count($Records)),
         ]);
     }
 }

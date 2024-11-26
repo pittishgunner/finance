@@ -2,14 +2,12 @@
 
 namespace App\Controller\Admin;
 
-use App\Entity\CapturedRequest;
 use App\Entity\Category;
 use App\Entity\CategoryRule;
 use App\Entity\CommandResult;
-use App\Entity\Record;
+use App\Entity\Notification;
 use App\Entity\SubCategory;
 use App\Entity\User;
-use App\Parser\INGB;
 use App\Service\RecordsService;
 use DateTime;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
@@ -195,7 +193,7 @@ class DashboardController extends AbstractDashboardController
         yield MenuItem::linkToCrud('Command results', 'fa fa-terminal', CommandResult::class);
         yield MenuItem::linkToCrud('Users', 'fas fa-users', User::class)
             ->setPermission('ROLE_SUPER_ADMIN');
-        yield MenuItem::linkToCrud('Captured Notifications', 'fas fa-arrow-down-short-wide', CapturedRequest::class)
+        yield MenuItem::linkToCrud('Captured Notifications', 'fas fa-arrow-down-short-wide', Notification::class)
             ->setPermission('ROLE_ADMIN');
         yield MenuItem::linkToRoute('React tree','fa-solid fa-bars-staggered', 'admin_react_test');
 

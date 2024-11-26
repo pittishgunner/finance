@@ -15,9 +15,12 @@
             {% if records|length > 0 %}
                 <div data-controller="unmatched">
                     <div style="position: fixed; border-radius: 8px; z-index: 2; top:40px; right: 20px; padding: 10px;">
-                        <div style="border: solid 1px #ccc; background: #ffc; border-radius: 8px; padding: 8px; margin: 4px;">
+                        <div style="border: solid 1px #ccc; background: #ffc; border-radius: 8px; padding: 8px; margin: 4px;" id="unmatchedWrapper">
                             <label>
-                                <select class="form-select form-select-sm"
+                                <select style="width: 440px;;" class="form-select form-select-sm"
+                                    data-ea-widget="ea-autocomplete" data-ea-autocomplete-render-items-as-html="false"
+                                    data-ea-i18n-no-results-found="No results found" data-ea-i18n-no-more-results="No more results" data-ea-i18n-loading-more-results="Loading more results…"
+                                    class="form-select tomselected ts-hidden-accessible" tabindex="-1"
                                     data-unmatched-target="rule"
                                     data-action="change->unmatched#onRuleChange"
                                     id="ruleSelect"
@@ -30,8 +33,7 @@
                                                         title="Account: {{ s.account }}&#10;Credit: {{ s.credit }}&#10;Debit: {{ s.debit }}&#10;Current matches:&#10;&#10;{% for matchValue in s.matches %}{{ matchValue }}&#10;{% endfor %}"
                                                         data-matches='{{ s.matchesJson }}'
                                                 >
-                                                    - {{ s.subCategoryName }}
-                                                    - {{ s.name }}
+                                                    &nbsp;&nbsp;&nbsp;- {{ s.subCategoryName }} - {{ s.name }}
                                                 </option>
                                             {% endfor %}
                                     </optgroup>

@@ -9,6 +9,7 @@ use App\Repository\UserRepository;
 use App\Repository\AccountRepository;
 use App\Repository\ImportedFileRepository;
 use App\Repository\RecordRepository;
+use App\Service\RecordsService;
 use DateTime;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
@@ -28,11 +29,15 @@ abstract class LoggableCommand extends Command
 
     protected int $updated = 0;
 
+    protected int $ignored = 0;
+
     protected $loggableOutput;
 
     protected ?User $User = null;
 
     protected string $csvPath;
+
+    protected string $notificationsPath;
 
     protected readonly ExpressionLanguage $expressionLanguage;
 
@@ -48,6 +53,7 @@ abstract class LoggableCommand extends Command
         protected readonly AccountRepository $accountRepository,
         protected readonly RecordRepository $recordRepository,
         protected readonly ImportedFileRepository $importedFileRepository,
+        protected readonly RecordsService $recordsService,
     )
     {
         parent::__construct();
@@ -55,6 +61,7 @@ abstract class LoggableCommand extends Command
         $this->loggableOutput = self::getLoggableOutput();
         $this->projectDir = $params->get('projectDir');
         $this->csvPath = realpath($this->projectDir) . DIRECTORY_SEPARATOR . $params->get('storagePath') . DIRECTORY_SEPARATOR . 'csv';
+        $this->notificationsPath = realpath($this->projectDir) . DIRECTORY_SEPARATOR . $params->get('storagePath') . DIRECTORY_SEPARATOR . 'notifications';
         $this->expressionLanguage = new ExpressionLanguage();
 
         $this->User = $this->userRepository->find(Source::IMPORTER_USER_ID);
@@ -65,7 +72,10 @@ abstract class LoggableCommand extends Command
 
     protected function saveOutput($extraName = ''): void
     {
-        $this->loggableOutput->writeln('Added ' . $this->created . ' records. Updated ' . $this->updated . ' records.');
+        $this->loggableOutput->writeln('Added ' . $this->created . ' records. ' .
+            'Updated ' . $this->updated . ' records. ' .
+            'Ignored ' . $this->ignored . ' records.'
+        );
 
         $duration = round((microtime(true) - $this->startingAt), 4);
         $this->loggableOutput->writeln('Saving output. Done in ' . $duration . ' seconds.');

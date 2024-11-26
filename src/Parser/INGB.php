@@ -2,7 +2,6 @@
 
 namespace App\Parser;
 
-use App\Entity\CapturedRequest;
 use App\Entity\Record;
 use DateTime;
 use DateTimeImmutable;
@@ -30,6 +29,7 @@ class INGB extends BaseParser
         $cases = [
             'plati POS' => '/Ai autorizat tranzactia de (?<debit>(.*)) (?<currency>(\w{3})) la (?<description>(.*)) din contul (?<account>(\d+)) in (?<date>(\d{1,4}-\d{1,2}-\d{2,4})). Sold: (?<balance>(.*))./mi',
             'intrari diverse' => '/Suma (?<credit>(.*)) (?<currency>(\w{3})) a fost creditata in (?<date>(\d{1,4}-\d{1,2}-\d{2,4})) in contul (?<account>(\d+)) - (?<description>(.*)). Sold: (?<balance>(.*))./mi',
+            'intrari diverse2' => '/Suma (?<credit>(.*)) (?<currency>(\w{3})) a fost creditata in (?<date>(\d{1,4}-\d{1,2}-\d{2,4})) in contul (?<account>(\d+)) de catre (?<description>(.*)). Sold: (?<balance>(.*))./mi',
             'transferuri' => '/Suma (?<debit>(.*)) (?<currency>(\w{3})) a fost debitata in (?<date>(\d{1,4}-\d{1,2}-\d{2,4})) din contul (?<account>(\d+)) - (?<description>(.*)). Sold: (?<balance>(.*))./mi',
             'round-up' => '/Ai economisit (?<debit>(.*)) (?<currency>(\w{3})) prin (?<description>(.*))./mi',
         ];
@@ -143,7 +143,7 @@ class INGB extends BaseParser
                 dd($subData);
             }
             $data[] = [
-                'date' => $date,
+                'date' => $date->format('Y-m-d'),
                 'debit' => $debit,
                 'credit' => $credit,
                 'balance' => $balance,
@@ -193,7 +193,7 @@ class INGB extends BaseParser
                 dd($subData);
             }
             $data[] = [
-                'date' => $date,
+                'date' => $date->format('Y-m-d'),
                 'debit' => $debit,
                 'credit' => $credit,
                 'balance' => $balance,
@@ -245,7 +245,7 @@ class INGB extends BaseParser
             }
 
             $data[] = [
-                'date' => $date,
+                'date' => $date->format('Y-m-d'),
                 'debit' => $debit,
                 'credit' => $credit,
                 'balance' => $balance,

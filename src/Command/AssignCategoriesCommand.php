@@ -45,10 +45,10 @@ class AssignCategoriesCommand extends LoggableCommand
             $this->loggableOutput->writeln('Starting assign-categories');
             $force = $input->getOption('force') === 'true';
 
-
             $this->rules = $categoryRuleRepo->findBy(['enabled' => true], ['position' => 'ASC']);
 
             foreach ($recordsRepo->getUncategorizedRecords($force) as $record) {
+                $this->updated++;
                 $detected = $this->detectCategory($record);
                 $record->setCategory($detected['category']);
                 $record->setSubCategory($detected['subCategory']);
@@ -99,8 +99,6 @@ class AssignCategoriesCommand extends LoggableCommand
         $category = $subCategory = null;
         $tags = [];
         foreach ($this->rules as $rule) {
-            $matchedDescription = $matchedDetails = false;
-
             if (!isset($this->tagsByRule[$rule->getId()])) {
                 $this->tagsByRule[$rule->getId()] = $this->tagService->loadTagging($rule)->getTagNames($rule);
             }

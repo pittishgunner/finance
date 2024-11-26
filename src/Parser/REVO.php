@@ -28,7 +28,7 @@ class REVO extends BaseParser
                 $amount = self::getFloatValue($line[5]);
 
                 $data[] = [
-                    'date' => $date,
+                    'date' => $date->format('Y-m-d'),
                     'debit' => $amount < 0 ? abs($amount) : 0,
                     'credit' => $amount > 0 ? abs($amount) : 0,
                     'balance' => self::getFloatValue($line[9]),

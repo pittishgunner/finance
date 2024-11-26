@@ -1,0 +1,2 @@
+webpush:
+  logger: Psr\Log\LoggerInterface

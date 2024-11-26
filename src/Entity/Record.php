@@ -11,17 +11,22 @@ use eduMedia\TagBundle\Entity\TaggableInterface;
 use eduMedia\TagBundle\Entity\TaggableTrait;
 
 #[ORM\Entity(repositoryClass: RecordRepository::class)]
-#[ORM\Index(name: 'date_idx', columns: ['date'])]
-#[ORM\Index(name: 'date_idx', columns: ['date'])]
-#[ORM\Index(name: 'debit_idx', columns: ['debit'])]
-#[ORM\Index(name: 'credit_idx', columns: ['credit'])]
-#[ORM\Index(name: 'balanceidx', columns: ['balance'])]
-#[ORM\Index(name: 'hash_idx', columns: ['hash'])]
-#[ORM\Index(name: 'notified_idx', columns: ['notified_at'])]
-#[ORM\Index(name: 'created_idx', columns: ['created_at'])]
+#[ORM\Index(columns: ['date'], name: 'date_idx')]
+#[ORM\Index(columns: ['debit'], name: 'debit_idx')]
+#[ORM\Index(columns: ['credit'], name: 'credit_idx')]
+#[ORM\Index(columns: ['balance'], name: 'balance_idx')]
+#[ORM\Index(columns: ['hash'], name: 'hash_idx')]
+#[ORM\Index(columns: ['notified_at'], name: 'notified_idx')]
+#[ORM\Index(columns: ['created_at'], name: 'created_idx')]
+#[ORM\Index(columns: ['reconciled'], name: 'reconciled_idx')]
 class Record implements TaggableInterface
 {
     use TaggableTrait;
+
+    public function __construct()
+    {
+        $this->setCreatedAt(new DateTimeImmutable());
+    }
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -65,12 +70,11 @@ class Record implements TaggableInterface
     #[ORM\ManyToOne(inversedBy: 'records')]
     private ?SubCategory $subCategory = null;
 
-    #[ORM\ManyToOne(inversedBy: 'records', cascade: ['persist'])]
-    #[ORM\JoinColumn(nullable: true)]
-    private ?CapturedRequest $capturedRequest = null;
-
     #[ORM\Column(type: 'datetime_microseconds', nullable: true)]
-    private ?\DateTimeImmutable $notifiedAt = null;
+    private ?DateTimeImmutable $notifiedAt = null;
+
+    #[ORM\Column]
+    private bool $reconciled = false;
 
     public function getId(): ?int
     {
@@ -221,26 +225,26 @@ class Record implements TaggableInterface
         return $this;
     }
 
-    public function getCapturedRequest(): ?CapturedRequest
-    {
-        return $this->capturedRequest;
-    }
-
-    public function setCapturedRequest(?CapturedRequest $capturedRequest): static
-    {
-        $this->capturedRequest = $capturedRequest;
-
-        return $this;
-    }
-
-    public function getNotifiedAt(): ?\DateTimeImmutable
+    public function getNotifiedAt(): ?DateTimeImmutable
     {
         return $this->notifiedAt;
     }
 
-    public function setNotifiedAt(?\DateTimeImmutable $notifiedAt): static
+    public function setNotifiedAt(?DateTimeImmutable $notifiedAt): static
     {
         $this->notifiedAt = $notifiedAt;
+
+        return $this;
+    }
+
+    public function isReconciled(): bool
+    {
+        return $this->reconciled;
+    }
+
+    public function setReconciled(bool $reconciled): static
+    {
+        $this->reconciled = $reconciled;
 
         return $this;
     }

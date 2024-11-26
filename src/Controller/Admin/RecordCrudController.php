@@ -9,6 +9,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Filters;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\BooleanField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\CodeEditorField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateTimeField;
@@ -27,7 +28,9 @@ class RecordCrudController extends AbstractCrudController
     public function configureFields(string $pageName): iterable
     {
         yield IdField::new('id')->onlyOnIndex();
-        yield TextField::new('account')->setDisabled();
+        if (!isset($_GET['filters']['account']['value']) || count($_GET['filters']['account']['value']) !== 1) {
+            yield TextField::new('account')->setDisabled();
+        }
         yield DateField::new('date')->setDisabled();
         yield NumberField::new('debit')->setDisabled();
         yield NumberField::new('credit')->setDisabled();
@@ -35,17 +38,19 @@ class RecordCrudController extends AbstractCrudController
         if (!empty($_GET['query'])) {
             yield TextField::new('description')->setDisabled()->setMaxLength(60000);
         } else {
-            yield TextField::new('description')->setDisabled()->setMaxLength(34);
+            yield TextField::new('description')->setDisabled()->setMaxLength(44);
         }
         yield AssociationField::new('category')->setDisabled();
         yield AssociationField::new('subCategory')->setDisabled();
         yield CodeEditorField::new('details')
             ->setLabel('Details')
             ->setLanguage('js')
-            ->formatValue(fn ($value) => json_encode(json_decode($value, true), JSON_PRETTY_PRINT));
+            ->formatValue(fn ($value) => json_encode(json_decode($value, true), JSON_PRETTY_PRINT))
+            ->onlyOnDetail();
         yield TagField::new('tags');
 
-        yield DateTimeField::new('notifiedAt')->onlyOnDetail();
+        yield DateTimeField::new('notifiedAt')->setDisabled();
+        yield BooleanField::new('reconciled')->renderAsSwitch(false);
         yield DateTimeField::new('createdAt')->onlyOnDetail();
         yield DateTimeField::new('updatedAt')->onlyOnDetail();
     }
