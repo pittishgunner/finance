@@ -9,6 +9,7 @@ use App\Repository\UserRepository;
 use App\Repository\AccountRepository;
 use App\Repository\ImportedFileRepository;
 use App\Repository\RecordRepository;
+use App\Service\ChartDataService;
 use App\Service\RecordsService;
 use DateTime;
 use DateTimeImmutable;
@@ -50,10 +51,10 @@ abstract class LoggableCommand extends Command
         protected readonly UserRepository         $userRepository,
         protected readonly TagService             $tagService,
         protected readonly ParameterBagInterface  $params,
-        protected readonly AccountRepository $accountRepository,
-        protected readonly RecordRepository $recordRepository,
+        protected readonly AccountRepository      $accountRepository,
+        protected readonly RecordRepository       $recordRepository,
         protected readonly ImportedFileRepository $importedFileRepository,
-        protected readonly RecordsService $recordsService,
+        protected readonly RecordsService       $recordsService,
     )
     {
         parent::__construct();

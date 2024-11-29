@@ -8,6 +8,7 @@ use App\Entity\CommandResult;
 use App\Entity\Notification;
 use App\Entity\SubCategory;
 use App\Entity\User;
+use App\Service\ChartDataService;
 use App\Service\RecordsService;
 use DateTime;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
@@ -36,9 +37,10 @@ class DashboardController extends AbstractDashboardController
     private $dateRange = [];
 
     public function __construct(
-        private RequestStack $requestStack,
+        private RequestStack      $requestStack,
         private AdminUrlGenerator $adminUrlGenerator,
-        private RecordsService $recordsService,
+        private RecordsService  $recordsService,
+        private ChartDataService  $chartDataService,
     ) {
         $session = $this->requestStack->getSession();
         $currentFilters = $this->requestStack->getCurrentRequest()->request->all();
@@ -130,7 +132,6 @@ class DashboardController extends AbstractDashboardController
     #[Route('/admin/unmatched_records', name: 'admin_unmatched_records')]
     public function unmatchedRecords(KernelInterface $kernel): Response
     {
-        set_time_limit(0);
         $application = new Application($kernel);
         $application->setAutoExit(false);
 
@@ -249,27 +250,34 @@ class DashboardController extends AbstractDashboardController
 
     private function createChart(ChartBuilderInterface $chartBuilder): Chart
     {
-        $chart = $chartBuilder->createChart(Chart::TYPE_LINE);
-        $chart->setData([
-            'labels' => ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
-            'datasets' => [
-                [
-                    'label' => 'My First dataset',
-                    'backgroundColor' => 'rgb(255, 99, 132)',
-                    'borderColor' => 'rgb(255, 99, 132)',
-                    'data' => [0, 10, 5, 2, 20, 30, 45],
-                ],
-            ],
-        ]);
+        $chart = $chartBuilder->createChart(Chart::TYPE_BAR);
+        $chart->setData($this->chartDataService->dailyExpenses($this->dateRange['from'], $this->dateRange['to']));
 
         $chart->setOptions([
-            'scales' => [
+            'plugins' => [
+                'zoom' => [
+                    'zoom' => [
+                        'wheel' => ['enabled' => true],
+                        'pinch' => ['enabled' => true],
+                        //'drag' => ['enabled' => true],
+                        'mode' => 'x',
+                    ],
+                    'pan' => [
+                        'enabled' => true,
+                        'mode' => 'x',
+
+                    ]
+                ],
+            ],
+
+            /*'scales' => [
                 'y' => [
                    'suggestedMin' => 0,
                    'suggestedMax' => 100,
                 ],
-            ],
+            ],*/
         ]);
+
 
         return $chart;
     }

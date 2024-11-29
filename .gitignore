@@ -19,8 +19,3 @@ yarn-error.log
 /.idea/
 config/keys/*
 /st0rage/
-
-###> symfony/asset-mapper ###
-/public/assets/
-/assets/vendor/
-###< symfony/asset-mapper ###

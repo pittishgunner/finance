@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Service\ChartDataService;
 use App\Service\RecordsService;
 use DateTimeImmutable;
 use DateTimeInterface;
@@ -23,9 +24,9 @@ class SiteController extends AbstractController
 {
     public function __construct(
         private EntityManagerInterface $entityManager,
-        private RecordsService $recordsService,
-        private KernelInterface $kernel,
-        private readonly WebPush $webpushService
+        private RecordsService       $recordsService,
+        private KernelInterface        $kernel,
+        private readonly WebPush       $webpushService
     ) {
 
     }

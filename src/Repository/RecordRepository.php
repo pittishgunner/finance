@@ -4,6 +4,7 @@ namespace App\Repository;
 
 use App\Entity\Account;
 use App\Entity\Record;
+use App\Repository\AccountRepository;
 use DateTime;
 use DateTimeInterface;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -16,9 +17,39 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 class RecordRepository extends ServiceEntityRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    private \App\Repository\AccountRepository $accountRepository;
+
+    public function __construct(ManagerRegistry $registry, AccountRepository $accountRepository)
     {
         parent::__construct($registry, Record::class);
+        $this->accountRepository = $accountRepository;
+    }
+
+    /**
+     * @param string $year
+     * @param string $month
+     * @return Record[]
+     */
+    public function dailyForPeriod(string $from, string $to): array
+    {
+        $account = $this->accountRepository->find(7);
+        $qb = $this->qbByRange($from, $to)
+            ->andWhere('r.account = :account')
+            ->setParameter('account', $account)
+            ->andWhere('r.debit > 0')
+            ->orderBy('r.date')
+            ->addOrderBy('r.notifiedAt');
+
+        return $qb->getQuery()->getResult();
+    }
+
+    private function qbByRange(string $from, string $to): QueryBuilder
+    {
+        return $this->createQueryBuilder('r')
+            ->andWhere('r.date BETWEEN :from AND :to')
+            ->setParameter('from', $from)
+            ->setParameter('to', $to)
+        ;
     }
 
     /**

@@ -8,6 +8,7 @@ if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROT
 }
 
 date_default_timezone_set('Europe/Bucharest');
+set_time_limit(0);
 
 require_once dirname(__DIR__).'/vendor/autoload_runtime.php';
 
