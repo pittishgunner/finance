@@ -257,26 +257,49 @@ class DashboardController extends AbstractDashboardController
             'plugins' => [
                 'zoom' => [
                     'zoom' => [
-                        'wheel' => ['enabled' => true],
-                        'pinch' => ['enabled' => true],
-                        //'drag' => ['enabled' => true],
+                       // 'wheel' => ['enabled' => true],
+                        //'pinch' => ['enabled' => true],
+                        'drag' => ['enabled' => true],
                         'mode' => 'x',
                     ],
-                    'pan' => [
+                    /*'pan' => [
                         'enabled' => true,
                         'mode' => 'x',
-
+                    ],*/
+                ],
+                'annotation' => [
+                    'annotations' => [
+                        [
+                            'type' => 'line',
+                        ]
                     ]
                 ],
-            ],
-
-            /*'scales' => [
-                'y' => [
-                   'suggestedMin' => 0,
-                   'suggestedMax' => 100,
+                'autocolors' => [
+                    'enabled' => true,
                 ],
-            ],*/
+                'legend' => [
+                    'display' => false,
+                ],
+                'htmlLegend' => [
+                    'containerID' => 'legend-container',
+                ]
+//                'interaction' => [
+//                    'intersect' => false,
+//                ]
+            ],
+            'responsive' => true,
+            'scales' => [
+                'x' => [
+                   'stacked' => true,
+                ],
+                'y' => [
+                    'stacked' => true,
+                ],
+            ],
         ]);
+
+
+        //dd($chart->getOptions());
 
 
         return $chart;

@@ -21,7 +21,7 @@ export default class extends Controller {
             opens: 'left',
             autoApply: true,
             showWeekNumbers: true,
-            locale: { format: 'DD MMM YYYY' }
+            locale: { format: 'DD MMM YYYY', "firstDay": 1  }
         })
     }
 

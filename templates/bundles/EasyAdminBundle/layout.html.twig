@@ -3,8 +3,9 @@
 
 {% block head_metas %}
     {{ parent() }}
-{#    {{ pwa() }}#}
-    <link rel="icon" type="image/png" href="/favicon.png" sizes="32x32">
+    <script>const applicationServerKey = '{{ vapid_public_key }}';</script>
+    <link rel="icon" type="image/png" href="/icon512_rounded.png" sizes="32x32">
+    <link rel="manifest" href="manifest.json" />
     <script src="https://cdn.jsdelivr.net/gh/alumuko/vanilla-datetimerange-picker@latest/dist/vanilla-datetimerange-picker.js"></script>
 {% endblock %}
 

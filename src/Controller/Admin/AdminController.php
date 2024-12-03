@@ -5,6 +5,9 @@ namespace App\Controller\Admin;
 use App\Entity\Category;
 use App\Entity\CategoryRule;
 use App\Entity\SubCategory;
+use App\Entity\Subscription;
+use App\Repository\SubscriptionRepository;
+use App\Service\NotificationsService;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
@@ -15,13 +18,65 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Annotation\Route;
+use WebPush\Subscription as WebPushSubscription;
+use WebPush\WebPush;
 
 class AdminController extends AbstractController
 {
     public function __construct(
         private EntityManagerInterface $entityManager,
+        private readonly WebPush       $webPushService,
+        private SubscriptionRepository $subscriptionRepository, private readonly NotificationsService $notificationsService,
     ) {
 
+    }
+
+    #[Route('/notify/subscribe', name: 'admin_notify_subscribe', methods: [Request::METHOD_POST])]
+    public function notificationSubscribe(Request $request): Response
+    {
+        $subscription = WebPushSubscription::createFromString($request->getContent());
+        $Subscription = new Subscription($subscription->getEndpoint());
+        $Subscription->setUser($this->getUser());
+        $Subscription->setSubscription($request->getContent());
+
+        $this->entityManager->persist($Subscription);
+        $this->entityManager->flush();
+
+        return new JsonResponse(['status' => 'ok']);
+    }
+
+    #[Route('/notify/unsubscribe', name: 'admin_notify_unsubscribe', methods: [Request::METHOD_POST])]
+    public function notificationUnsubscribe(Request $request): Response
+    {
+        $Subscription = $this->subscriptionRepository->findOneBy(['user' => $this->getUser(), 'subscription' => $request->getContent()]);
+        if ($Subscription !== null) {
+            $this->entityManager->remove($Subscription);
+            $this->entityManager->flush();
+        }
+
+        return new JsonResponse(['status' => 'ok']);
+    }
+
+
+    #[Route(path: '/notify/test', name: 'admin_notify_test', methods: [Request::METHOD_POST])]
+    public function notificationTest(Request $request): JsonResponse
+    {
+        $notificationAndSubscription = $this->notificationsService->getNotificationByType($request->getContent());
+
+        $statusReport = $this->webPushService->send(
+            $notificationAndSubscription['notification'],
+            $notificationAndSubscription['subscription'],
+        );
+
+        return new JsonResponse(
+            [
+                'error' => !$statusReport->isSuccess(),
+                'links' => $statusReport->getLinks(),
+                'location' => $statusReport->getLocation(),
+                'expired' => $statusReport->isSubscriptionExpired(),
+            ],
+            $statusReport->isSuccess() ? 200 : 400,
+        );
     }
 
     #[Route('/admin/setRange', name: 'admin_set_range', methods: [Request::METHOD_POST])]

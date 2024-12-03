@@ -13,6 +13,47 @@ class REVO extends BaseParser
         return 'Revolut';
     }
 
+    public function predictRecord(string $text): array
+    {
+        $ignored = [
+            'replace this text with parts of the notification to be ignored',
+            'replace this text with parts of the notification to be ignored',
+        ];
+        foreach ($ignored as $case) {
+            if (strstr(strtolower($text), strtolower($case))) {
+                return ['ignored' => $text];
+            }
+        }
+
+        $cases = [
+            'transferuri intrate' => '/(?<description>(.*)) Has sent you (?<currency>(\w{3}))(?<credit>(.*)). Tap to say thank you(.*)/mi',
+        ];
+
+        foreach ($cases as $key => $case) {
+            preg_match($case, $text, $matches);
+            if (!empty($matches)) {
+                $matches['matched'] = $key;
+                $matches['string'] = $text;
+                foreach ($matches as $matchKey => $match) {
+                    if (is_integer($matchKey)) {
+                        unset($matches[$matchKey]);
+                    }
+                    if (!empty($matches['currency'])) {
+                        $matches['account'] = 'REVOR' . $matches['currency'];
+                    }
+                    if ($matchKey === 'debit' || $matchKey === 'credit') {
+                        $matches[$matchKey] = $this->getPredictionFloatValue($matches[$matchKey]);
+                    }
+                }
+                ksort($matches);
+
+                return $matches;
+            }
+        }
+
+        return ['unmatched' => $text];
+    }
+
     public function parseFile(?SplFileObject $fileData): array
     {
         $data = [];
@@ -42,6 +83,11 @@ class REVO extends BaseParser
     }
 
     private static function getFloatValue(string $value): float
+    {
+        return !empty($value) ? floatval(str_replace(',', '', $value)) : 0;
+    }
+
+    private static function getPredictionFloatValue(string $value): float
     {
         return !empty($value) ? floatval(str_replace(',', '', $value)) : 0;
     }

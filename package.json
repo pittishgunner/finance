@@ -9,7 +9,7 @@
         "@symfony/webpack-encore": "^1.7.0",
         "axios": "1.7.4",
         "bootstrap": "^5.0.0",
-        "chart.js": "^3.4.1",
+        "chart.js": "^4.4.6",
         "core-js": "^3.0.0",
         "jquery": "^3.6.0",
         "moment": "^2.30.1",
@@ -36,6 +36,8 @@
         "@mui/x-tree-view": "^7.22.1",
         "@mui/x-tree-view-pro": "^7.22.1",
         "brace": "^0.11.1",
+        "chartjs-plugin-annotation": "^3.1.0",
+        "chartjs-plugin-autocolors": "^0.3.1",
         "chartjs-plugin-zoom": "^2.2.0",
         "pwa-bundle": "spomky-labs/pwa-bundle"
     }

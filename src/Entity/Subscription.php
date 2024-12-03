@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use WebPush\Subscription as WebPushSubscription;
 
 #[ORM\Table(name: 'subscriptions')]
 #[ORM\Entity]
+#[ORM\Index(columns: ['subscription'], name: 'subscription_idx')]
 class Subscription extends WebPushSubscription
 {
     #[ORM\Id]
@@ -20,6 +22,9 @@ class Subscription extends WebPushSubscription
     #[ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id', nullable: true)]
 
     private ?User $user;
+
+    #[ORM\Column(type: Types::TEXT)]
+    private ?string $subscription = null;
 
     public function getId(): ?int
     {
@@ -50,4 +55,16 @@ class Subscription extends WebPushSubscription
 
         return $object;
     }*/
+
+    public function getSubscription(): ?string
+    {
+        return $this->subscription;
+    }
+
+    public function setSubscription(string $subscription): static
+    {
+        $this->subscription = $subscription;
+
+        return $this;
+    }
 }

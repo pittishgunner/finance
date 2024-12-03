@@ -13,8 +13,12 @@ app.debug = true;
 registerReactControllerComponents(require.context('./react/controllers', true, /\.(j|t)sx?$/));
 
 import zoomPlugin from 'chartjs-plugin-zoom';
+import annotationPlugin from 'chartjs-plugin-annotation';
+import autocolors from 'chartjs-plugin-autocolors';
+
+
 document.addEventListener('chartjs:init', function (event) {
     const Chart = event.detail.Chart;
-    Chart.register(zoomPlugin);
+    Chart.register({zoomPlugin, annotationPlugin, autocolors});
 });
 

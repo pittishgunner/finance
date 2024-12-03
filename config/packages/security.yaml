@@ -55,6 +55,7 @@ security:
         # TODO - REMOVE COMMENT FROM BELOW
         - { path: ^/api, roles: IS_AUTHENTICATED_FULLY } # Allows accessing the Swagger UI
         - { path: ^/admin, roles: ROLE_ADMIN }
+        - { path: ^/admin/share/image, roles: PUBLIC_ACCESS }
         - { path: ^/profile, roles: ROLE_USER }
         - { path: ^/login, roles: PUBLIC_ACCESS }
 

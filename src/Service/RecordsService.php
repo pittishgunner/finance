@@ -29,9 +29,9 @@ class RecordsService
         private CategoryRuleRepository $categoryRuleRepository,
         private AccountRepository      $accountRepository,
         private UserRepository         $userRepository,
-        private KernelInterface $kernel,
-        private WebPush $webPush,
-        private AdminUrlGenerator $adminUrlGenerator,
+        private KernelInterface        $kernel,
+        private WebPush                $webPush,
+        private AdminUrlGenerator      $adminUrlGenerator, private readonly NotificationsService $notificationsService,
     ) {}
 
 
@@ -141,6 +141,9 @@ class RecordsService
 
             $this->entityManager->persist($Notification);
             $this->entityManager->flush();
+
+            //TODO - move this only for count($Records) > 0
+            $this->notificationsService->notifySubscribedUsers($message);
         }
 
         return $Records;
@@ -156,10 +159,17 @@ class RecordsService
      */
     public function addRecordsByNotification(Notification $notification): bool|string|array
     {
+        $decoded = json_decode($notification->getContent(), true);
+        if (empty($decoded['currentTime'])) {
+            return false;
+        }
 
         switch ($notification->getSource()) {
             case 'ro.ing.mobile.banking.android.activity':
                 $parser = Parser::getBankCsvParser('----INGB');
+                break;
+            case 'com.revolut.revolut':
+                $parser = Parser::getBankCsvParser('----REVO');
                 break;
             default:
                 $parser = Parser::getBankCsvParser('');
@@ -167,30 +177,7 @@ class RecordsService
         }
         $data = [];
         if (method_exists($parser, 'predictRecord')) {
-            $decoded = json_decode($notification->getContent(), true);
-            if (empty($decoded['text']) || empty($decoded['currentTime'])) {
-                return false;
-            }
-
-//            $user = $this->userRepository->find(2);
-//            $subscriptions = $user->getSubscriptions();
-            //$notification = Notification::create();
-         /*       //->highUrgency()
-                ->withPayload($decoded['text']);
-            $subscription = Subscription::createFromString($decoded['text']);
-
-            $statusReport = $this->webPush->send($notification, $subscription);
-
-            /*
-            foreach ($subscriptions as $subscription) {
-                $report = $this->webPush->send($notification, $subscription);
-                if ($report->isSubscriptionExpired()) {
-                    //...Remove this subscription
-                }
-            }
-            */
-
-            $predicted = $parser->predictRecord($decoded['text']);
+            $predicted = $parser->predictRecord($notification->getMessage());
             if (isset($predicted['ignored'])) {
                 return false;
             }

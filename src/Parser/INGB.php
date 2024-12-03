@@ -14,15 +14,15 @@ class INGB extends BaseParser
         return 'ING';
     }
 
-    public function predictRecord($string): array
+    public function predictRecord(string $text): array
     {
         $ignored = [
             'tocmai ai incercat sa accesezi home',
             'Apasa aici pentru a aproba sau anula',
         ];
         foreach ($ignored as $case) {
-            if (strstr(strtolower($string), strtolower($case))) {
-                return ['ignored' => $string];
+            if (strstr(strtolower($text), strtolower($case))) {
+                return ['ignored' => $text];
             }
         }
 
@@ -35,10 +35,10 @@ class INGB extends BaseParser
         ];
 
         foreach ($cases as $key => $case) {
-            preg_match($case, $string, $matches);
+            preg_match($case, $text, $matches);
             if (!empty($matches)) {
                 $matches['matched'] = $key;
-                $matches['string'] = $string;
+                $matches['string'] = $text;
                 foreach ($matches as $matchKey => $match) {
                     if (is_integer($matchKey)) {
                         unset($matches[$matchKey]);
@@ -58,7 +58,7 @@ class INGB extends BaseParser
             }
         }
 
-        return ['unmatched' => $string];
+        return ['unmatched' => $text];
     }
 
     public function parseFile(?SplFileObject $fileData): array

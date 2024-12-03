@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const applicationServerKey = 'BB4W1qfBi7MF_Lnrc6i2oL-glAuKF4kevy9T0k2vyKV4qvuBrN3T6o9-7-NR3mKHwzDXzD3fe7XvIqIU1iADpGQ';
     let isPushEnabled = false;
 
     const pushButton = document.querySelector('#push-subscription-button');
@@ -124,7 +123,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     applicationServerKey: urlBase64ToUint8Array(applicationServerKey),
                 })
             )
-            .then(subscription => subscription && changePushButtonState('enabled'))
+            .then(subscription => {
+                console.warn(subscription)
+                const supportedContentEncodings = PushManager.supportedContentEncodings || ['aesgcm'];
+                const jsonSubscription = subscription.toJSON();
+                fetch('/notify/subscribe', {
+                    method: 'POST',
+                    body: JSON.stringify(Object.assign(jsonSubscription, { supportedContentEncodings })),
+                });
+                changePushButtonState('enabled');
+
+                return subscription;
+            })
             .catch(e => {
                 if (Notification.permission === 'denied') {
                     console.warn('Notifications are denied by the user.');
@@ -160,6 +170,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
 
+                const supportedContentEncodings = PushManager.supportedContentEncodings || ['aesgcm'];
+                const jsonSubscription = subscription.toJSON();
+                fetch('/notify/unsubscribe', {
+                    method: 'POST',
+                    body: JSON.stringify(Object.assign(jsonSubscription, { supportedContentEncodings })),
+                });
+
                 return subscription;
             })
             .then(subscription => subscription.unsubscribe())
@@ -186,7 +203,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 const supportedContentEncodings = PushManager.supportedContentEncodings || ['aesgcm'];
                 const jsonSubscription = subscription.toJSON();
-                fetch('/notify', {
+                fetch('/notify/test', {
                     method: 'POST',
                     body: JSON.stringify(Object.assign(jsonSubscription, { supportedContentEncodings })),
                 });

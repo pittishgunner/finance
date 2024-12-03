@@ -6,8 +6,16 @@
 
 {% block main %}
     <div class="row">
-        <div class="col-12">
-            {{ render_chart(chart) }}
+        <div class="col-12" data-controller="charts">
+            <div style="display: flex">
+                <div style="width: 380px; flex: 0 0 380px;">
+                    <button class="btn btn-outline-light" data-charts-target="toggle" data-action="click->charts#onToggle">Toggle all</button>
+                    <div id="legend-container"></div>
+                </div>
+                <div class="col-9">
+                {{ render_chart(chart) }}
+                </div>
+            </div>
         </div>
     </div>
 {% endblock %}
