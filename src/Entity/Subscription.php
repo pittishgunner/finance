@@ -10,7 +10,6 @@ use WebPush\Subscription as WebPushSubscription;
 
 #[ORM\Table(name: 'subscriptions')]
 #[ORM\Entity]
-#[ORM\Index(columns: ['subscription'], name: 'subscription_idx')]
 class Subscription extends WebPushSubscription
 {
     #[ORM\Id]

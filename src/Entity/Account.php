@@ -34,25 +34,12 @@ class Account
     #[ORM\Column]
     private ?bool $enabled = null;
 
-    /**
-     * @var Collection<int, Record>
-     */
-    #[ORM\OneToMany(targetEntity: Record::class, mappedBy: 'AccountId', orphanRemoval: true)]
-    private Collection $records;
-
     #[ORM\Column(type: 'datetime_microseconds')]
     private ?DateTimeImmutable $createdAt = null;
 
-    /**
-     * @var Collection<int, ImportedFile>
-     */
-    #[ORM\OneToMany(targetEntity: ImportedFile::class, mappedBy: 'account')]
-    private Collection $importedFiles;
-
     public function __construct()
     {
-        $this->records = new ArrayCollection();
-        $this->importedFiles = new ArrayCollection();
+        $this->setCreatedAt(new DateTimeImmutable());
     }
 
     // Used by EntityFilter
@@ -138,24 +125,6 @@ class Account
         return $this;
     }
 
-    /**
-     * @return Collection<int, Record>
-     */
-    public function getRecords(): Collection
-    {
-        return $this->records;
-    }
-
-    public function addRecord(Record $record): static
-    {
-        if (!$this->records->contains($record)) {
-            $this->records->add($record);
-            $record->setAccount($this);
-        }
-
-        return $this;
-    }
-
     public function removeRecord(Record $record): static
     {
         if ($this->records->removeElement($record)) {
@@ -176,36 +145,6 @@ class Account
     public function setCreatedAt(DateTimeImmutable $createdAt): static
     {
         $this->createdAt = $createdAt;
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, ImportedFile>
-     */
-    public function getImportedFiles(): Collection
-    {
-        return $this->importedFiles;
-    }
-
-    public function addImportedFile(ImportedFile $importedFile): static
-    {
-        if (!$this->importedFiles->contains($importedFile)) {
-            $this->importedFiles->add($importedFile);
-            $importedFile->setAccount($this);
-        }
-
-        return $this;
-    }
-
-    public function removeImportedFile(ImportedFile $importedFile): static
-    {
-        if ($this->importedFiles->removeElement($importedFile)) {
-            // set the owning side to null (unless already changed)
-            if ($importedFile->getAccount() === $this) {
-                $importedFile->setAccount(null);
-            }
-        }
 
         return $this;
     }

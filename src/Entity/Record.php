@@ -33,7 +33,7 @@ class Record implements TaggableInterface
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\ManyToOne(inversedBy: 'records')]
+    #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false)]
     private Account $account;
 
