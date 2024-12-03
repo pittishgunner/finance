@@ -3,7 +3,13 @@ import {Controller} from '@hotwired/stimulus';
 const charts = [];
 
 export default class extends Controller {
-
+    static targets = ['zoomOut', 'toggle']
+    async zoomOut() {
+        //this.zoomOutTarget.classList.add('d-none');
+        charts.forEach(function (chart) {
+            chart.resetZoom();
+        });
+    }
 
     averageAnnotation = {
         type: 'line',
@@ -44,8 +50,12 @@ export default class extends Controller {
         function average(ctx) {
             return allValues.reduce((a, b) => a + b, 0) / allValues.length;
         }
+        function enableZoomOut(){
+            document.getElementById('zoomOutButton').classList.remove('d-none');
+        }
 
-        // event.detail.config.options.plugins.zoom.zoom.onZoomComplete = getVisibleValues;
+
+        event.detail.config.options.plugins.zoom.zoom.onZoomComplete = enableZoomOut;
         // event.detail.config.options.plugins.zoom.pan.onPanComplete = getVisibleValues;
 
         event.detail.config.options.plugins.annotation.annotations[0] = {
@@ -72,7 +82,7 @@ export default class extends Controller {
                 listContainer = document.createElement('ul');
                 // listContainer.style.display = 'flex';
                 // listContainer.style.flexDirection = 'row';
-                listContainer.style.margin = '12px 0 0 0';
+                listContainer.style.margin = '8px 8px 0 0';
                 listContainer.style.padding = 0;
 
                 legendContainer.appendChild(listContainer);
@@ -93,16 +103,29 @@ export default class extends Controller {
 
                 // Reuse the built-in legendItems generator
                 const items = chart.options.plugins.legend.labels.generateLabels(chart);
-                console.warn(items);
-
+                let orderedItems = [];
                 items.forEach(item => {
+                    let totalItem = 0;
+                    chart.data.datasets.forEach(dataset => {
+                        if (dataset.label === item.text) {
+                            const floated = dataset.data.reduce((a, b) => a + b, 0);
+                            totalItem = (Math.round(floated * 100) / 100).toFixed(2)
+                        }
+                    });
+
+                    item.total = totalItem;
+                });
+                orderedItems = items.sort((a, b) => b.total - a.total);
+
+                orderedItems.forEach(item => {
                     const li = document.createElement('li');
                     li.style.alignItems = 'center';
                     li.style.cursor = 'pointer';
                     li.style.display = 'flex';
                     li.style.flexDirection = 'row';
-                    li.style.marginLeft = '0';
-
+                    li.style.margin = '0 0 1px 0';
+                    li.style.borderBottom = 'solid 1px #ccc';
+                    li.style.textDecoration = item.hidden ? 'line-through' : '';
                     li.onclick = () => {
                         const {type} = chart.config;
                         if (type === 'pie' || type === 'doughnut') {
@@ -127,16 +150,29 @@ export default class extends Controller {
 
                     // Text
                     const textContainer = document.createElement('p');
+                    textContainer.innerText = item.text;
+                    textContainer.title = item.text;
                     textContainer.style.color = item.fontColor;
                     textContainer.style.margin = 0;
                     textContainer.style.padding = 0;
-                    textContainer.style.textDecoration = item.hidden ? 'line-through' : '';
+                    textContainer.style.flexGrow = 1;
+                    textContainer.style.flexShrink = 1;
 
-                    const text = document.createTextNode(item.text);
-                    textContainer.appendChild(text);
+                    textContainer.style.overflow = 'hidden';
+                    textContainer.style.textOverflow = 'ellipsis';
+                    textContainer.style.whiteSpace = 'nowrap'
+
+                    const total = document.createElement('span');
+                    total.innerText = item.total;
+                    total.style.display = 'inline-block';
+                    total.style.flexShrink = 0;
+                    total.style.margin = '0 0 0 4px';
 
                     li.appendChild(boxSpan);
                     li.appendChild(textContainer);
+                    li.appendChild(total);
+
+
                     ul.appendChild(li);
                 });
             }
@@ -193,7 +229,5 @@ export default class extends Controller {
             });
             chart.update();
         });
-        //console.warn(charts)
     }
-
 }

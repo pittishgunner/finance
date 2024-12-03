@@ -88,9 +88,11 @@ class DashboardController extends AbstractDashboardController
     public function index(ChartBuilderInterface $chartBuilder = null): Response
     {
         assert(null !== $chartBuilder);
+        $type = $this->requestStack->getCurrentRequest()->query->get('type') ?? 'daily';
 
         return $this->render('admin/index.html.twig', [
-            'chart' => $this->createChart($chartBuilder),
+            'chart' => $this->createChart($chartBuilder, $type),
+            'type' => $type,
         ]);
     }
 
@@ -248,10 +250,10 @@ class DashboardController extends AbstractDashboardController
             ->addWebpackEncoreEntry('admin');
     }
 
-    private function createChart(ChartBuilderInterface $chartBuilder): Chart
+    private function createChart(ChartBuilderInterface $chartBuilder, string $type = 'daily'): Chart
     {
         $chart = $chartBuilder->createChart(Chart::TYPE_BAR);
-        $chart->setData($this->chartDataService->dailyExpenses($this->dateRange['from'], $this->dateRange['to']));
+        $chart->setData($this->chartDataService->groupedExpenses($this->dateRange['from'], $this->dateRange['to'], $type));
 
         $chart->setOptions([
             'plugins' => [

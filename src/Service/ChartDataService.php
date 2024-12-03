@@ -16,8 +16,19 @@ class ChartDataService
     {
     }
 
-    public function dailyExpenses(string $from, string $to): array
+    public function groupedExpenses(string $from, string $to, string $type = 'daily'): array
     {
+        switch ($type) {
+            case 'weekly':
+                $format = 'W Y';
+                break;
+            case 'monthly':
+                $format = 'M Y';
+                break;
+            default:
+                $format = 'j M Y';
+                break;
+        }
         $records = $this->recordRepository->dailyForPeriod($from, $to);
         $byDate = $labels = [];
         $allCategoriesInSet = [
@@ -39,7 +50,7 @@ class ChartDataService
             }
             //echo $categoryString . "<br/>";
 
-            $date = $record->getDate()->format('j M Y');
+            $date = $record->getDate()->format($format);
             if (!isset($byDate[$date]['total'])) {
                 $byDate[$date]['total'] = 0;
                 $labels[] = $date;

@@ -9,7 +9,13 @@
         <div class="col-12" data-controller="charts">
             <div style="display: flex">
                 <div style="width: 380px; flex: 0 0 380px;">
-                    <button class="btn btn-outline-light" data-charts-target="toggle" data-action="click->charts#onToggle">Toggle all</button>
+                    <button class="btn btn-secondary" data-charts-target="toggle" data-action="click->charts#onToggle">Toggle all</button>
+                    <button class="btn btn-secondary d-none" data-charts-target="zoomOut" id="zoomOutButton" data-action="click->charts#zoomOut">Zoom out</button>
+                    <div class="btn-group" style="float: right; margin-right: 8px">
+                        <a class="btn btn-outline-light {{ type == 'daily' ? 'btn-primary' : '' }}" href="/admin">Daily</a>
+                        <a class="btn btn-outline-light {{ type == 'weekly' ? 'btn-primary' : '' }}" href="/admin?type=weekly">Weekly</a>
+                        <a class="btn btn-outline-light {{ type == 'monthly' ? 'btn-primary' : '' }}" href="/admin?type=monthly">Monthly</a>
+                    </div>
                     <div id="legend-container"></div>
                 </div>
                 <div class="col-9">

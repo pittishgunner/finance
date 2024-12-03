@@ -45,7 +45,7 @@ class AssignCategoriesCommand extends LoggableCommand
             $this->loggableOutput->writeln('Starting assign-categories');
             $force = $input->getOption('force') === 'true';
 
-            $this->rules = $categoryRuleRepo->findBy(['enabled' => true], ['position' => 'ASC']);
+            $this->rules = $categoryRuleRepo->findBy(['enabled' => true], ['id' => 'ASC']);
 
             foreach ($recordsRepo->getUncategorizedRecords($force) as $record) {
                 $this->updated++;
