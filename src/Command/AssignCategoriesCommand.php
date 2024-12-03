@@ -26,8 +26,6 @@ class AssignCategoriesCommand extends LoggableCommand
      */
     private $rules = [];
 
-    private $tagsByRule = [];
-
     protected function configure(): void
     {
         $this->addOption('force', 'f',InputOption::VALUE_OPTIONAL, 'Force reassigning for all records. Run as symfony console assign-categories --force=true', false);
@@ -99,9 +97,6 @@ class AssignCategoriesCommand extends LoggableCommand
         $category = $subCategory = null;
         $tags = [];
         foreach ($this->rules as $rule) {
-            if (!isset($this->tagsByRule[$rule->getId()])) {
-                $this->tagsByRule[$rule->getId()] = $this->tagService->loadTagging($rule)->getTagNames($rule);
-            }
             if (null !== $rule->getAccount() && $record->getAccount() !== $rule->getAccount()) {
                 continue;
             }
@@ -139,9 +134,6 @@ class AssignCategoriesCommand extends LoggableCommand
             $category = $rule->getCategory();
             $subCategory = $rule->getSubCategory();
 
-            if (!empty($this->tagsByRule[$rule->getId()])) {
-                $tags = $this->tagsByRule[$rule->getId()];
-            }
             if ($matchedDescription !== false) {
                 $tags[] = $matchedDescription;
             }

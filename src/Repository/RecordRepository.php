@@ -30,12 +30,12 @@ class RecordRepository extends ServiceEntityRepository
      * @param string $month
      * @return Record[]
      */
-    public function dailyForPeriod(string $from, string $to): array
+    public function dailyForPeriod(string $from, string $to, array $accountIds = []): array
     {
-        $account = $this->accountRepository->find(7);
+        $accounts = $this->accountRepository->findBy(['id' => $accountIds]);
         $qb = $this->qbByRange($from, $to)
-            ->andWhere('r.account = :account')
-            ->setParameter('account', $account)
+            ->andWhere('r.account IN (:accounts)')
+            ->setParameter('accounts', $accounts)
             ->andWhere('r.debit > 0')
             ->orderBy('r.date')
             ->addOrderBy('r.notifiedAt');

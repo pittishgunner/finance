@@ -2,12 +2,14 @@
 
 namespace App\Controller\Admin;
 
+use App\Entity\Account;
 use App\Entity\Category;
 use App\Entity\CategoryRule;
 use App\Entity\CommandResult;
 use App\Entity\Notification;
 use App\Entity\SubCategory;
 use App\Entity\User;
+use App\Repository\AccountRepository;
 use App\Service\ChartDataService;
 use App\Service\RecordsService;
 use DateTime;
@@ -26,7 +28,7 @@ use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\KernelInterface;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\UX\Chartjs\Builder\ChartBuilderInterface;
@@ -36,11 +38,14 @@ class DashboardController extends AbstractDashboardController
 {
     private $dateRange = [];
 
+    private $accounts = [];
+
     public function __construct(
         private RequestStack      $requestStack,
         private AdminUrlGenerator $adminUrlGenerator,
         private RecordsService  $recordsService,
         private ChartDataService  $chartDataService,
+        private AccountRepository $accountRepository,
     ) {
         $session = $this->requestStack->getSession();
         $currentFilters = $this->requestStack->getCurrentRequest()->request->all();
@@ -58,6 +63,19 @@ class DashboardController extends AbstractDashboardController
             $session->set('dateRange', $dateRange);
         } else {
             $this->dateRange = $session->get('dateRange');
+        }
+
+        if (null === $session->get('accounts')) {
+            $availableAccounts = $this->accountRepository->findBy(['enabled' => true], ['id' => 'DESC']);
+            $accounts = [
+                'accounts' => $availableAccounts,
+                'selected' => [],
+            ];
+
+            $this->accounts = $accounts;
+            $session->set('accounts', $accounts);
+        } else {
+            $this->accounts = $session->get('accounts');
         }
 
         // This should handle changing from filters and not from range picker
@@ -83,6 +101,7 @@ class DashboardController extends AbstractDashboardController
             }
         }
     }
+
     #[IsGranted('ROLE_ADMIN')]
     #[Route('/admin', name: 'admin')]
     public function index(ChartBuilderInterface $chartBuilder = null): Response
@@ -168,17 +187,29 @@ class DashboardController extends AbstractDashboardController
         yield MenuItem::linkToDashboard('Dashboard', 'fa fa-dashboard');
         yield MenuItem::section('Transactions')->setPermission('ROLE_MODERATOR');
 
+        $filters = [
+            'date' => [
+                'comparison' => 'between',
+                'value' => $this->dateRange['from'],
+                'value2' => $this->dateRange['to'],
+            ],
+            'account' => [
+                'comparison' => '=',
+                'value' => $this->accounts['selected'],
+            ]
+        ];
+
+        $url = $this->adminUrlGenerator
+            ->unsetAll()
+            ->setController(RecordCrudController::class)
+            ->setAction(Action::INDEX)
+            ->set('filters', $filters)
+        ;
+
         yield MenuItem::linkToUrl(
             'Transactions',
             'fa-solid fa-arrows-turn-right',
-            $this->adminUrlGenerator
-                ->unsetAll()
-                ->setController(RecordCrudController::class)
-                ->setAction(Action::INDEX)
-                ->set('filters[date][comparison]', 'between')
-                ->set('filters[date][value]', $this->dateRange['from'])
-                ->set('filters[date][value2]', $this->dateRange['to'])
-                ->generateUrl()
+                $url->generateUrl()
             )
             ->setPermission('ROLE_MODERATOR');
         yield MenuItem::subMenu('Categories', 'fa fa-bars')
@@ -191,6 +222,9 @@ class DashboardController extends AbstractDashboardController
         yield MenuItem::linkToCrud('Category rules', 'fa fa-wand-sparkles', CategoryRule::class);
         yield MenuItem::linkToRoute('Unmatched records','fa-solid fa-triangle-exclamation', 'admin_unmatched_records');
 
+
+        yield MenuItem::section('Accounts');
+        yield MenuItem::linkToCrud('Accounts', 'fa fa-user', Account::class);
 
         yield MenuItem::section('Miscellaneous');
         yield MenuItem::linkToCrud('Command results', 'fa fa-terminal', CommandResult::class);
@@ -253,7 +287,7 @@ class DashboardController extends AbstractDashboardController
     private function createChart(ChartBuilderInterface $chartBuilder, string $type = 'daily'): Chart
     {
         $chart = $chartBuilder->createChart(Chart::TYPE_BAR);
-        $chart->setData($this->chartDataService->groupedExpenses($this->dateRange['from'], $this->dateRange['to'], $type));
+        $chart->setData($this->chartDataService->groupedExpenses($this->dateRange['from'], $this->dateRange['to'], $type, $this->accounts['selected']));
 
         $chart->setOptions([
             'plugins' => [

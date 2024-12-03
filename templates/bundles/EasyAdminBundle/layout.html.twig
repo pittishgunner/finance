@@ -5,21 +5,32 @@
     {{ parent() }}
     <script>const applicationServerKey = '{{ vapid_public_key }}';</script>
     <link rel="icon" type="image/png" href="/icon512_rounded.png" sizes="32x32">
-    <link rel="manifest" href="manifest.json" />
+    <link rel="manifest" href="/manifest.json" />
     <script src="https://cdn.jsdelivr.net/gh/alumuko/vanilla-datetimerange-picker@latest/dist/vanilla-datetimerange-picker.js"></script>
 {% endblock %}
 
 {% block content_top_header %}
-    <div class="form-date-range">
-    <form class="form-action-search" method="post" data-controller="daterangepicker">
-        <div class="field-number form-group">
-            <input type="text" name="dateRange" class="form-control" data-daterangepicker-target="input" value="{% if app.session.get('dateRange') is not null %}{{ app.session.get('dateRange')['readable'] }}{% endif %}">
-            <button class="form-control btn btn-success" data-daterangepicker-target="submit" data-action="click->daterangepicker#onSetRange" type="button">
-                <i class="fa fa-spinner fa-spin d-none" data-daterangepicker-target="loading"></i>
-                Set Range
+    <div class="form-date-range form-widget">
+        <form class="form-action-search" method="post" data-controller="filters">
+            <input type="text" name="dateRange" class="form-control" data-filters-target="dateRangeInput" value="{% if app.session.get('dateRange') is not null %}{{ app.session.get('dateRange')['readable'] }}{% endif %}">
+            <select class="form-select form-control form-select-sm"
+                    data-ea-widget="ea-autocomplete" data-ea-autocomplete-render-items-as-html="false"
+                    data-filters-target="accountsSelect"
+                    data-filters="change->filters#onAccountsChange"
+                    multiple
+            >
+                {% for account in app.session.get('accounts').accounts %}
+                    <option value="{{ account.id }}"
+                    {{ account.id in app.session.get('accounts').selected ? 'selected': '' }}
+                    >{{ account.alias }}</option>
+                {% endfor %}
+            </select>
+
+            <button class="form-control btn btn-success" data-filters-target="submit" data-action="click->filters#onSet" type="button">
+                <i class="fa fa-spinner fa-spin d-none" data-filters-target="loading"></i>
+                Set
             </button>
-        </div>
-    </form>
+        </form>
     </div>
 
     {{ parent() }}

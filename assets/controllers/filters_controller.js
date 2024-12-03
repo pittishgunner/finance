@@ -1,7 +1,7 @@
 import { Controller } from '@hotwired/stimulus'
 
 export default class extends Controller {
-    static targets = ['input', 'loading', 'submit']
+    static targets = ['dateRangeInput', 'accountsSelect', 'loading', 'submit']
 
     initialize() {
         const ranges = {
@@ -15,7 +15,7 @@ export default class extends Controller {
             'Last 20 years': [moment().subtract(20, 'years'), moment()],
         }
 
-        this.dateRangePicker = new DateRangePicker(this.inputTarget, {
+        this.dateRangePicker = new DateRangePicker(this.dateRangeInputTarget, {
             alwaysShowCalendars: true,
             ranges: ranges,
             opens: 'left',
@@ -25,19 +25,38 @@ export default class extends Controller {
         })
     }
 
-    async onSetRange() {
-        await this.postSetRange(this.inputTarget.value)
+    async onSet() {
+        let here = new URL(window.location.href);
+        await this.postSetRange({
+            dateRange: this.dateRangeInputTarget.value,
+            accounts: this.getSelectedOptions(this.accountsSelectTarget),
+            fromUrl: here
+        });
     }
-    async postSetRange(range) {
+
+    getSelectedOptions(selectFieldTarget) {
+        const selectedOptions = [];
+        if (typeof selectFieldTarget !== 'undefined') {
+            for (const option of selectFieldTarget.options) {
+                if (option.selected) {
+                    selectedOptions.push(parseInt(option.value));
+                }
+            }
+        }
+
+        return selectedOptions;
+    }
+
+    async postSetRange(filters) {
         this.loadingTarget.classList.remove('d-none');
         this.submitTarget.setAttribute('disabled', 'disabled');
-        let here = new URL(window.location.href);
-        return fetch('/admin/setRange', {
+
+        return fetch('/admin/setFilters', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({dateRange:range,fromUrl:here})
+                body: JSON.stringify(filters)
             })
             .then((response) => {
                 if (response?.ok) {
@@ -50,7 +69,9 @@ export default class extends Controller {
                 }
             })
             .then((redirectData) => {
-                window.location.replace(redirectData.redirect);
+                if (redirectData.redirect) {
+                    window.location.replace(redirectData.redirect);
+                }
 
                 return '';
             })

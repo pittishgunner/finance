@@ -17,7 +17,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 use WebPush\Subscription as WebPushSubscription;
 use WebPush\WebPush;
 
@@ -79,10 +79,11 @@ class AdminController extends AbstractController
         );
     }
 
-    #[Route('/admin/setRange', name: 'admin_set_range', methods: [Request::METHOD_POST])]
-    public function setRange(Request $request, AdminUrlGenerator $adminUrlGenerator): Response
+    #[Route('/admin/setFilters', name: 'admin_set_filters', methods: [Request::METHOD_POST])]
+    public function setFilters(Request $request, AdminUrlGenerator $adminUrlGenerator): Response
     {
         $dateRange = $request->getPayload()->get('dateRange');
+        $accounts = $request->get('accounts');
         $fromUrl = $request->getPayload()->get('fromUrl');
         if (null !== $dateRange) {
             $split = explode(' - ', $dateRange);
@@ -96,25 +97,44 @@ class AdminController extends AbstractController
                         'to' => $to->format('Y-m-d'),
                     ]
                 );
+                $sessionAccounts = $request->getSession()->get('accounts');
+                $sessionAccounts['selected'] = $accounts;
+
+                $request->getSession()->set('accounts', $sessionAccounts);
 
                 if (null !== $fromUrl) {
                     $parsed = parse_url($fromUrl);
                     if (!empty($parsed['query'])) {
                         parse_str($parsed['query'], $parsedQuery);
+                        $filters = [];
+
+                        $g = $adminUrlGenerator
+                            ->unsetAll()
+                            ->setController(RecordCrudController::class)
+                            ->setAction(Action::INDEX);
                         if (
                             isset($parsedQuery['filters']['date']['comparison']) &&
                             $parsedQuery['filters']['date']['comparison'] === 'between'
                         ) {
-                            $g = $adminUrlGenerator
-                                ->unsetAll()
-                                ->setController(RecordCrudController::class)
-                                ->setAction(Action::INDEX)
-                                ->set('filters[date][comparison]', 'between')
-                                ->set('filters[date][value]', $from->format('Y-m-d'))
-                                ->set('filters[date][value2]', $to->format('Y-m-d'))
-                                ->generateUrl();
-                            return new JsonResponse(['redirect' => $g]);
+                            $filters['date'] = [
+                                'comparison' => 'between',
+                                'value' => $from->format('Y-m-d'),
+                                'value2' => $to->format('Y-m-d'),
+                            ];
                         }
+                        if (
+                            isset($parsedQuery['filters']['account']['comparison']) &&
+                            $parsedQuery['filters']['account']['comparison'] === '='
+                        ) {
+                            $filters['account'] = [
+                                'comparison' => '=',
+                                'value' => $accounts,
+                            ];
+                        }
+
+                        $g->set('filters', $filters);
+
+                        return new JsonResponse(['redirect' => $g->generateUrl()]);
                     }
 
                     return new JsonResponse(['redirect' => $fromUrl]);

@@ -13,17 +13,31 @@
 }
 
 .form-date-range {
-    margin:22px 32px 0 0;
+    width: 580px;
+    flex: 0 0 580px;
+
     .form-control {
         display: inline-block;
-        width: 220px;
+        width: 186px;
+        vertical-align: middle;
+    }
+    .form-select {
+        display: inline-block;
+        width: 320px;
+        max-height: 26px;
+    }
+    .ts-wrapper {
+
     }
     .btn-success {
-        width: 100px;
-        margin: 0 0 4px 0;
+        width: 50px;
     }
 }
-
+.content-top {
+    /*.content-search {
+        flex: 0 0 550px;
+    }*/
+}
 #unmatchedWrapper {
     .ts-dropdown {
         height:420px;
