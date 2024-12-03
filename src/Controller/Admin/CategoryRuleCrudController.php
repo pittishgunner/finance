@@ -3,8 +3,6 @@
 namespace App\Controller\Admin;
 
 use App\Entity\CategoryRule;
-use App\Repository\CategoryRuleRepository;
-use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Assets;
@@ -18,32 +16,19 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\BooleanField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
-use EasyCorp\Bundle\EasyAdminBundle\Filter\EntityFilter;
 use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGenerator;
 use eduMedia\TagBundle\Admin\Field\TagField;
 use Insitaction\EasyAdminFieldsBundle\EasyAdminFieldsBundle;
 use Insitaction\EasyAdminFieldsBundle\Field\DependentField;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-
-enum Direction
-{
-    case Top;
-    case Up;
-    case Down;
-    case Bottom;
-}
 
 class CategoryRuleCrudController extends AbstractCrudController
 {
     public function __construct(
         private AdminUrlGenerator $adminUrlGenerator,
         private UrlGeneratorInterface $urlGenerator,
-        private EntityManagerInterface $entityManager,
-        private CategoryRuleRepository $categoryRuleRepository,
-        private RequestStack $requestStack,
     )
     {
 
@@ -97,9 +82,6 @@ class CategoryRuleCrudController extends AbstractCrudController
             ->hideOnIndex()
         ;
 
-        yield TagField::new('tags')
-            ->setHelp('These tags will be assigned if the rule matches');
-
         yield BooleanField::new('enabled')
             ->setHelp('');
     }
@@ -132,36 +114,10 @@ class CategoryRuleCrudController extends AbstractCrudController
                     ->generateUrl()
             );
 
-        $entityCount = $this->categoryRuleRepository->count([]);
-
-        $moveTop = Action::new('moveTop', false, 'fa fa-arrow-up')
-            ->setHtmlAttributes(['title' => 'Move to top'])
-            ->linkToCrudAction('moveTop')
-            ->displayIf(fn ($entity) => $entity->getPosition() > 0);
-
-        $moveUp = Action::new('moveUp', false, 'fa fa-sort-up')
-            ->setHtmlAttributes(['title' => 'Move up'])
-            ->linkToCrudAction('moveUp')
-            ->displayIf(fn ($entity) => $entity->getPosition() > 0);
-
-        $moveDown = Action::new('moveDown', false, 'fa fa-sort-down')
-            ->setHtmlAttributes(['title' => 'Move down'])
-            ->linkToCrudAction('moveDown')
-            ->displayIf(fn ($entity) => $entity->getPosition() < $entityCount - 1);
-
-        $moveBottom = Action::new('moveBottom', false, 'fa fa-arrow-down')
-            ->setHtmlAttributes(['title' => 'Move to bottom'])
-            ->linkToCrudAction('moveBottom')
-            ->displayIf(fn ($entity) => $entity->getPosition() < $entityCount - 1);
-
         $actions
-            ->add(Crud::PAGE_INDEX, $moveBottom)
-            ->add(Crud::PAGE_INDEX, $moveDown)
-            ->add(Crud::PAGE_INDEX, $moveUp)
-            ->add(Crud::PAGE_INDEX, $moveTop)
             ->add(Crud::PAGE_INDEX, $duplicate)
             //->disable(Crud::PAGE_DETAIL)
-            ->reorder(Crud::PAGE_INDEX, ['moveTop', 'moveUp', 'moveDown', 'moveBottom', Action::DELETE, Action::EDIT]);
+        ;
 
         return parent::configureActions($actions);
     }
@@ -169,56 +125,9 @@ class CategoryRuleCrudController extends AbstractCrudController
     public function configureCrud(Crud $crud): Crud
     {
         return parent::configureCrud($crud)
-            ->setDefaultSort(['position' => 'ASC'])
+            ->setDefaultSort(['category' => 'DESC'])
             ->setPaginatorPageSize(100)
             ->showEntityActionsInlined();
-    }
-
-    public function moveTop(AdminContext $context): Response
-    {
-        return $this->move($context, Direction::Top);
-    }
-
-    public function moveUp(AdminContext $context): Response
-    {
-        return $this->move($context, Direction::Up);
-    }
-
-    public function moveDown(AdminContext $context): Response
-    {
-        return $this->move($context, Direction::Down);
-    }
-
-    public function moveBottom(AdminContext $context): Response
-    {
-        return $this->move($context, Direction::Bottom);
-    }
-
-    private function move(AdminContext $context, Direction $direction): Response
-    {
-        $object = $context->getEntity()->getInstance();
-        $newPosition = match($direction) {
-            Direction::Top => 0,
-            Direction::Up => $object->getPosition() - 1,
-            Direction::Down => $object->getPosition() + 1,
-            Direction::Bottom => -1,
-        };
-
-        $object->setPosition($newPosition);
-        $this->entityManager->flush();
-
-        $this->addFlash('success', 'The element has been successfully moved.');
-
-        return $this->redirect($context->getRequest()->headers->get('referer'));
-    }
-
-    public function createEntity(string $entityFqcn): CategoryRule
-    {
-        $entityCount = $this->categoryRuleRepository->count([]);
-        $CategoryRule = new CategoryRule();
-        $CategoryRule->setPosition($entityCount - 1);
-
-        return $CategoryRule;
     }
 
     public function configureFilters(Filters $filters): Filters

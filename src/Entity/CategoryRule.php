@@ -5,15 +5,10 @@ namespace App\Entity;
 use App\Repository\CategoryRuleRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use eduMedia\TagBundle\Entity\TaggableInterface;
-use eduMedia\TagBundle\Entity\TaggableTrait;
-use Gedmo\Mapping\Annotation as Gedmo;
 
 #[ORM\Entity(repositoryClass: CategoryRuleRepository::class)]
-class CategoryRule implements TaggableInterface
+class CategoryRule
 {
-    use TaggableTrait;
-
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -39,10 +34,6 @@ class CategoryRule implements TaggableInterface
 
     #[ORM\Column]
     private ?bool $enabled = true;
-
-    #[Gedmo\SortablePosition]
-    #[ORM\Column]
-    private int $position;
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $name = null;
@@ -134,16 +125,6 @@ class CategoryRule implements TaggableInterface
         $this->enabled = $enabled;
 
         return $this;
-    }
-
-    public function getPosition(): int
-    {
-        return $this->position;
-    }
-
-    public function setPosition(int $position): void
-    {
-        $this->position = $position;
     }
 
     public function getName(): ?string
