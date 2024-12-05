@@ -62,6 +62,8 @@ class RulesService
                     $CategoryRule->setDebit($rule['debit']);
                     $CategoryRule->setCredit($rule['credit']);
                     $CategoryRule->setEnabled($rule['enabled']);
+                    $CategoryRule->setPosition($rule['position']);
+                    $CategoryRule->setStop($rule['stop']);
 
                     $this->entityManager->persist($CategoryRule);
                 }
@@ -118,6 +120,8 @@ class RulesService
                         'debit' => $ruleEntity->getDebit(),
                         'credit' => $ruleEntity->getCredit(),
                         'enabled' => $ruleEntity->isEnabled(),
+                        'position' => $ruleEntity->getPosition(),
+                        'stop' => $ruleEntity->isStop(),
                     ];
                 }
                 $subcategories[] = [

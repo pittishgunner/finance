@@ -52,6 +52,7 @@ class RecordCrudController extends AbstractCrudController
 
         yield DateTimeField::new('notifiedAt')->setDisabled();
         yield BooleanField::new('reconciled')->renderAsSwitch(false);
+        yield BooleanField::new('ignored')->setHelp('Ignored on graphs');
         yield DateTimeField::new('createdAt')->onlyOnDetail();
         yield DateTimeField::new('updatedAt')->onlyOnDetail();
     }

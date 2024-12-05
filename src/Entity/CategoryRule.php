@@ -38,6 +38,12 @@ class CategoryRule
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $name = null;
 
+    #[ORM\Column]
+    private int $position = 999999;
+
+    #[ORM\Column]
+    private bool $stop = false;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -135,6 +141,30 @@ class CategoryRule
     public function setName(?string $name): static
     {
         $this->name = $name;
+
+        return $this;
+    }
+
+    public function getPosition(): int
+    {
+        return $this->position;
+    }
+
+    public function setPosition(int $position): static
+    {
+        $this->position = $position;
+
+        return $this;
+    }
+
+    public function isStop(): bool
+    {
+        return $this->stop;
+    }
+
+    public function setStop(bool $stop): static
+    {
+        $this->stop = $stop;
 
         return $this;
     }

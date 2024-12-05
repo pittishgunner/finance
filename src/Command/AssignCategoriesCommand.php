@@ -42,17 +42,40 @@ class AssignCategoriesCommand extends LoggableCommand
 
             $this->loggableOutput->writeln('Starting assign-categories');
             $force = $input->getOption('force') === 'true';
+            if ($force) {
+                $connection = $this->entityManager->getConnection();
+                $platform   = $connection->getDatabasePlatform();
+                $connection->executeQuery('SET FOREIGN_KEY_CHECKS = 0;');
+                $connection->executeQuery('UPDATE record SET category_id = NULL, sub_category_id = NULL;');
+                foreach (['tag', 'tagging'] as $table) {
+                    $truncateSql = $platform->getTruncateTableSQL($table);
+                    $connection->executeStatement($truncateSql);
+                }
+                $connection->executeQuery('SET FOREIGN_KEY_CHECKS = 1;');
+            }
 
-            $this->rules = $categoryRuleRepo->findBy(['enabled' => true], ['account' => 'DESC', 'id' => 'ASC']);
+            $this->rules = $categoryRuleRepo->findBy(['enabled' => true], ['position' => 'ASC', 'id' => 'ASC']);
 
-            foreach ($recordsRepo->getUncategorizedRecords($force) as $record) {
-                $this->updated++;
+            foreach ($recordsRepo->getUncategorizedRecords() as $record) {
                 $detected = $this->detectCategory($record);
-                $record->setCategory($detected['category']);
-                $record->setSubCategory($detected['subCategory']);
-                if (!empty($detected['tags'])) {
-                    $tags = $this->tagService->loadOrCreateTags($detected['tags']);
-                    $this->tagService->replaceTags($tags, $record, true, true);
+                if (count($detected['matches']) > 1) {
+                    $this->ignored ++;
+                    $this->loggableOutput->writeln('WARNING Record: ' . $record->getId() . ' (' . $record->getDescription() . ') matches more than 1 time. ' . "\n" . implode(', ', $detected['matches']));
+                } else {
+                    if ($detected['category'] !== null && $detected['subCategory'] !== null) {
+                        $this->updated++;
+                        $record->setCategory($detected['category']);
+                        $record->setSubCategory($detected['subCategory']);
+                        if (!empty($detected['tags'])) {
+                            $tags = $this->tagService->loadOrCreateTags($detected['tags']);
+                            $this->tagService->replaceTags($tags, $record, true, true);
+                        }
+                    } else {
+                        if ($force) {
+                            $this->loggableOutput->writeln('WARNING Record: ' . $record->getId() . ' not matched');
+                        }
+                        $this->ignored++;
+                    }
                 }
             }
 
@@ -61,30 +84,9 @@ class AssignCategoriesCommand extends LoggableCommand
             $duration = round((microtime(true) - $this->startingAt), 4);
             $this->loggableOutput->writeln('Saving output. Done in ' . $duration . ' seconds.');
 
-            $CommandResult = new CommandResult();
-            $CommandResult->setDate(new DateTimeImmutable());
-            $CommandResult->setCommand($this->getName());
-            $CommandResult->setResult('success');
-            $CommandResult->setOutput($this->loggableOutput->getLinesData());
-            $CommandResult->setDuration($duration);
-
-            $this->entityManager->persist($CommandResult);
-            $this->entityManager->flush();
-
-            $this->loggableOutput->writeln('Done in ' . $duration . ' seconds.');
+            $this->saveOutput();
         } catch (Exception $exception) {
-            $this->loggableOutput->writeln('<error>ERROR:</error> ' . $exception->getMessage());
-            $this->loggableOutput->writeln('<comment>On file: ' . $exception->getFile() . ':' . $exception->getLine() . '</comment>');
-
-            $CommandResult = new CommandResult();
-            $CommandResult->setDate(new DateTimeImmutable());
-            $CommandResult->setCommand($this->getName());
-            $CommandResult->setResult('error');
-            $CommandResult->setOutput($this->loggableOutput->getLinesData());
-            $CommandResult->setDuration(round((microtime(true) - $this->startingAt), 4));
-
-            $this->entityManager->persist($CommandResult);
-            $this->entityManager->flush();
+            $this->saveException($exception);
 
             return Command::FAILURE;
         }
@@ -96,6 +98,7 @@ class AssignCategoriesCommand extends LoggableCommand
     {
         $category = $subCategory = null;
         $tags = [];
+        $matches = [];
         foreach ($this->rules as $rule) {
             if (null !== $rule->getAccount() && $record->getAccount() !== $rule->getAccount()) {
                 continue;
@@ -141,7 +144,10 @@ class AssignCategoriesCommand extends LoggableCommand
                 $tags[] = $matchedDetails;
             }
 
-            break;
+            $matches[] = $rule->getName();
+            if ($rule->isStop()) {
+                break;
+            }
         }
         if (null === $category) {
             //$this->entityManager->flush();dd($record);
@@ -150,6 +156,7 @@ class AssignCategoriesCommand extends LoggableCommand
             'category' => $category,
             'subCategory' => $subCategory,
             'tags' => $tags,
+            'matches' => $matches,
         ];
     }
 

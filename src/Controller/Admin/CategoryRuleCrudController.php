@@ -15,6 +15,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\ArrayField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\BooleanField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\NumberField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGenerator;
 use eduMedia\TagBundle\Admin\Field\TagField;
@@ -84,6 +85,10 @@ class CategoryRuleCrudController extends AbstractCrudController
 
         yield BooleanField::new('enabled')
             ->setHelp('');
+        yield BooleanField::new('stop')
+            ->setHelp('If rule is found, it will stop checking other rules');
+
+        yield NumberField::new('position', 'Position');
     }
 
     public static function getEntityFqcn(): string
@@ -135,7 +140,7 @@ class CategoryRuleCrudController extends AbstractCrudController
             ->setEntityLabelInSingular('Category Rule')
             ->setEntityLabelInPlural('Category rules')
             ->setPageTitle(Crud::PAGE_INDEX, 'Category Rules ' . $this->getImportRulesHtml())
-            ->setDefaultSort(['category' => 'DESC'])
+            ->setDefaultSort(['position' => 'ASC', 'category' => 'DESC', 'subCategory' => 'DESC'])
             ->setPaginatorPageSize(100)
             ->showEntityActionsInlined();
     }

@@ -38,6 +38,8 @@ export default class extends Controller {
     }
 
     _onPreConnect(event) {
+        let totalVisible = true;
+
         // The chart is not yet created
         // You can access the config that will be passed to "new Chart()"
         let allValues = event.detail.config.data.datasets[0].data;
@@ -117,6 +119,7 @@ export default class extends Controller {
                 });
                 orderedItems = items.sort((a, b) => b.total - a.total);
 
+                let totalVisible = false;
                 orderedItems.forEach(item => {
                     const li = document.createElement('li');
                     li.style.alignItems = 'center';
@@ -126,6 +129,9 @@ export default class extends Controller {
                     li.style.margin = '0 0 1px 0';
                     li.style.borderBottom = 'solid 1px #ccc';
                     li.style.textDecoration = item.hidden ? 'line-through' : '';
+                    if (item.text === 'Total spent') {
+                        totalVisible = item.hidden;
+                    }
                     li.onclick = () => {
                         const {type} = chart.config;
                         if (type === 'pie' || type === 'doughnut') {
@@ -175,6 +181,9 @@ export default class extends Controller {
 
                     ul.appendChild(li);
                 });
+
+                event.detail.config.options.plugins.annotation.annotations[0].display = totalVisible;
+
             }
         };
 
@@ -185,8 +194,6 @@ export default class extends Controller {
 
         event.detail.config.options.plugins.tooltip.callbacks = {
             afterBody(context) {
-                console.error(context);
-                console.warn(context[0].dataset.tagData[context[0].dataIndex]);
                 let body = '';
                 for (const [key, value] of Object.entries(context[0].dataset.tagData[context[0].dataIndex])) {
                     let valueRounded = (Math.round(value * 100) / 100).toFixed(2);

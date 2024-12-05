@@ -40,6 +40,8 @@ class RecordRepository extends ServiceEntityRepository
             ->andWhere('r.account IN (:accounts)')
             ->setParameter('accounts', $accounts)
             ->andWhere('r.debit > 0')
+            ->andWhere('r.ignored = :ignored')
+            ->setParameter('ignored', false)
             ->orderBy('r.date')
             ->addOrderBy('r.notifiedAt');
 
@@ -59,14 +61,11 @@ class RecordRepository extends ServiceEntityRepository
      * @param bool $force
      * @return Record[]
      */
-    public function getUncategorizedRecords(bool $force = false): array
+    public function getUncategorizedRecords(): array
     {
-        $qb = $this->createQueryBuilder('r');
-        if (!$force) {
-            $qb->andWhere('r.category IS NULL');
-        }
-
-        //$qb->setMaxResults(140);
+        $qb = $this->createQueryBuilder('r')
+            ->andWhere('r.category IS NULL')
+        ;
 
         return $qb->getQuery()->getResult();
     }

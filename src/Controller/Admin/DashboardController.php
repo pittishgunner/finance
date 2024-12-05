@@ -332,9 +332,6 @@ class DashboardController extends AbstractDashboardController
                 'tooltip' => [
                     'callbacks' => [ ],
                 ]
-//                'interaction' => [
-//                    'intersect' => false,
-//                ]
             ],
             'responsive' => true,
             'scales' => [

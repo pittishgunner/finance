@@ -76,6 +76,9 @@ class Record implements TaggableInterface
     #[ORM\Column]
     private bool $reconciled = false;
 
+    #[ORM\Column]
+    private bool $ignored = false;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -245,6 +248,18 @@ class Record implements TaggableInterface
     public function setReconciled(bool $reconciled): static
     {
         $this->reconciled = $reconciled;
+
+        return $this;
+    }
+
+    public function isIgnored(): bool
+    {
+        return $this->ignored;
+    }
+
+    public function setIgnored(bool $ignored): static
+    {
+        $this->ignored = $ignored;
 
         return $this;
     }
