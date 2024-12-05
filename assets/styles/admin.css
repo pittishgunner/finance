@@ -46,3 +46,11 @@
         max-height: 370px;
     }
 }
+
+#flash-messages {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 99;
+}

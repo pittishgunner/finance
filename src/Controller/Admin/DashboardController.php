@@ -22,6 +22,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Config\MenuItem;
 use EasyCorp\Bundle\EasyAdminBundle\Config\UserMenu;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractDashboardController;
 use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGenerator;
+use Exception;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
@@ -67,9 +68,15 @@ class DashboardController extends AbstractDashboardController
 
         if (null === $session->get('accounts')) {
             $availableAccounts = $this->accountRepository->findBy(['enabled' => true], ['id' => 'DESC']);
+            $selected = [];
+            foreach ($availableAccounts as $account) {
+                if ($account->isDefaultAccount()) {
+                    $selected[] = $account->getId();
+                }
+            }
             $accounts = [
                 'accounts' => $availableAccounts,
-                'selected' => [],
+                'selected' => $selected,
             ];
 
             $this->accounts = $accounts;
@@ -149,6 +156,9 @@ class DashboardController extends AbstractDashboardController
         ]);
     }
 
+    /**
+     * @throws Exception
+     */
     #[IsGranted('ROLE_ADMIN')]
     #[Route('/admin/unmatched_records', name: 'admin_unmatched_records')]
     public function unmatchedRecords(KernelInterface $kernel): Response

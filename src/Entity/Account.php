@@ -4,8 +4,6 @@ namespace App\Entity;
 
 use App\Repository\AccountRepository;
 use DateTimeImmutable;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: AccountRepository::class)]
@@ -33,6 +31,9 @@ class Account
 
     #[ORM\Column]
     private ?bool $enabled = null;
+
+    #[ORM\Column]
+    private bool $defaultAccount = false;
 
     #[ORM\Column(type: 'datetime_microseconds')]
     private ?DateTimeImmutable $createdAt = null;
@@ -125,14 +126,14 @@ class Account
         return $this;
     }
 
-    public function removeRecord(Record $record): static
+    public function isDefaultAccount(): bool
     {
-        if ($this->records->removeElement($record)) {
-            // set the owning side to null (unless already changed)
-            if ($record->getAccount() === $this) {
-                $record->setAccount(null);
-            }
-        }
+        return $this->defaultAccount;
+    }
+
+    public function setDefaultAccount(bool $defaultAccount): static
+    {
+        $this->defaultAccount = $defaultAccount;
 
         return $this;
     }

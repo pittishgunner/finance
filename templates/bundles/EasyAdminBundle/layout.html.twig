@@ -36,6 +36,12 @@
     {{ parent() }}
 {% endblock %}
 
+{% block wrapper_wrapper %}
+    <div data-controller="admin">
+    {{ parent() }}
+    </div>
+{% endblock %}
+
 {% block sidebar %}
     {{ parent() }}
     <div style="width:210px; position: fixed; bottom: 50px; left: 10px; text-align: center;">

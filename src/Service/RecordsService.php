@@ -9,17 +9,16 @@ use App\Helpers\Parser;
 use App\Repository\AccountRepository;
 use App\Repository\CategoryRuleRepository;
 use App\Repository\RecordRepository;
-use App\Repository\UserRepository;
 use DateTime;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGenerator;
+use Exception;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\NullOutput;
 use Symfony\Component\HttpKernel\KernelInterface;
-use WebPush\WebPush;
 
 class RecordsService
 {
@@ -28,25 +27,26 @@ class RecordsService
         private RecordRepository       $recordRepository,
         private CategoryRuleRepository $categoryRuleRepository,
         private AccountRepository      $accountRepository,
-        private UserRepository         $userRepository,
         private KernelInterface        $kernel,
-        private WebPush                $webPush,
         private AdminUrlGenerator      $adminUrlGenerator, private readonly NotificationsService $notificationsService,
     ) {}
 
 
+    /**
+     * @throws Exception
+     */
     public function getUnmatchedRecords(): array
     {
         $prepared = [];
-        $unmatchedRecords = $this->recordRepository->findBy(['category' => null]);
+        $unmatchedRecords = $this->recordRepository->findBy(['category' => null], ['date' => 'DESC']);
         foreach ($unmatchedRecords as $record) {
             $parser = Parser::getBankCsvParser($record->getAccount()->getIban());
             $parsedData = $parser->getUnmatchedData($record);
             if (empty($parsedData)) {
-                throw new \Exception('Parse error. Empty data for ' . $parser::class);
+                throw new Exception('Parse error. Empty data for ' . $parser::class);
             }
             if (empty($parsedData['key'])) {
-                throw new \Exception('Parse error. Key missing');
+                throw new Exception('Parse error. Key missing');
             }
             if (isset($prepared[$parsedData['key']]['count'])) {
                 $prepared[$parsedData['key']]['count']++;
@@ -57,8 +57,8 @@ class RecordsService
             }
         }
 
-        uasort($prepared, fn($a, $b) => $b['count'] <=> $a['count']);
-        //asort($prepared);
+        //uasort($prepared, fn($a, $b) => $b['count'] <=> $a['count']); // Sort by count
+        //asort($prepared); // Sort ascending by title
 
         return $prepared;
     }
@@ -90,6 +90,7 @@ class RecordsService
      * a non-empty array for Records that were added
      *
      * @return bool|string|Record[]
+     * @throws Exception
      */
     public function captureNotification(string $source = '', string $message = '', string $content = '', string $ip = '', array $headers = []): bool|string|array
     {
@@ -164,17 +165,11 @@ class RecordsService
             return false;
         }
 
-        switch ($notification->getSource()) {
-            case 'ro.ing.mobile.banking.android.activity':
-                $parser = Parser::getBankCsvParser('----INGB');
-                break;
-            case 'com.revolut.revolut':
-                $parser = Parser::getBankCsvParser('----REVO');
-                break;
-            default:
-                $parser = Parser::getBankCsvParser('');
-                break;
-        }
+        $parser = match ($notification->getSource()) {
+            'ro.ing.mobile.banking.android.activity' => Parser::getBankCsvParser('----INGB'),
+            'com.revolut.revolut' => Parser::getBankCsvParser('----REVO'),
+            default => Parser::getBankCsvParser(''),
+        };
         $data = [];
         if (method_exists($parser, 'predictRecord')) {
             $predicted = $parser->predictRecord($notification->getMessage());

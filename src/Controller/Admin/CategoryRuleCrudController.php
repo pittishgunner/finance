@@ -43,7 +43,7 @@ class CategoryRuleCrudController extends AbstractCrudController
 
     public function configureFields(string $pageName): iterable
     {
-        yield IdField::new('id')->setDisabled();
+        yield IdField::new('id')->setDisabled()->onlyOnDetail();
         yield TextField::new('name');
 
         yield AssociationField::new('category', 'Category')
@@ -114,8 +114,15 @@ class CategoryRuleCrudController extends AbstractCrudController
                     ->generateUrl()
             );
 
+        $export = Action::new('export', 'Export Current Rules and Categories')
+            ->linkToRoute('admin_export_category_rules')
+            ->setHtmlAttributes(['target' => '_blank'])
+            ->createAsGlobalAction()
+        ;
+
         $actions
             ->add(Crud::PAGE_INDEX, $duplicate)
+            ->add(Crud::PAGE_INDEX, $export)
             //->disable(Crud::PAGE_DETAIL)
         ;
 
@@ -125,9 +132,33 @@ class CategoryRuleCrudController extends AbstractCrudController
     public function configureCrud(Crud $crud): Crud
     {
         return parent::configureCrud($crud)
+            ->setEntityLabelInSingular('Category Rule')
+            ->setEntityLabelInPlural('Category rules')
+            ->setPageTitle(Crud::PAGE_INDEX, 'Category Rules ' . $this->getImportRulesHtml())
             ->setDefaultSort(['category' => 'DESC'])
             ->setPaginatorPageSize(100)
             ->showEntityActionsInlined();
+    }
+
+    private function getImportRulesHtml()
+    {
+        return '
+<form action="' . $this->generateUrl('admin_import_category_rules') . '" method="POST" enctype="multipart/form-data"
+    data-controller="submit-confirm"
+    data-action="submit-confirm#onSubmit"
+    data-submit-confirm-title-value="This will delete all your current Categories, Subcategories and Rules!"
+    data-submit-confirm-icon-value="warning"
+    data-submit-confirm-confirm-button-text-value="Yes, I want to proceed"
+    data-submit-confirm-submit-async-value=""
+>
+    <button id="importRulesButton" class="btn-info btn">
+        Replace Rules by JSON <span></span>
+    </button>
+    <input id="importRulesFile" type="file" accept="application/JSON" name="importRulesFile" class="d-none" />
+    <button id="importRulesSubmit" class="btn-primary btn d-none">
+        Import
+    </button>        
+</form>';
     }
 
     public function configureFilters(Filters $filters): Filters

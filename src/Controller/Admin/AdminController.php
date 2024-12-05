@@ -8,16 +8,23 @@ use App\Entity\SubCategory;
 use App\Entity\Subscription;
 use App\Repository\SubscriptionRepository;
 use App\Service\NotificationsService;
+use App\Service\RulesService;
 use DateTime;
+use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGenerator;
+use JsonException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedJsonResponse;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
+use WebPush\Exception\OperationException;
 use WebPush\Subscription as WebPushSubscription;
 use WebPush\WebPush;
 
@@ -26,11 +33,18 @@ class AdminController extends AbstractController
     public function __construct(
         private EntityManagerInterface $entityManager,
         private readonly WebPush       $webPushService,
-        private SubscriptionRepository $subscriptionRepository, private readonly NotificationsService $notificationsService,
+        private SubscriptionRepository $subscriptionRepository,
+        private readonly NotificationsService $notificationsService,
+        private readonly RulesService $rulesService,
+        private AdminUrlGenerator $adminUrlGenerator,
     ) {
 
     }
 
+    /**
+     * @throws OperationException
+     * @throws JsonException
+     */
     #[Route('/notify/subscribe', name: 'admin_notify_subscribe', methods: [Request::METHOD_POST])]
     public function notificationSubscribe(Request $request): Response
     {
@@ -106,35 +120,37 @@ class AdminController extends AbstractController
                     $parsed = parse_url($fromUrl);
                     if (!empty($parsed['query'])) {
                         parse_str($parsed['query'], $parsedQuery);
-                        $filters = [];
+                        if (isset($parsedQuery['filters'])) {
+                            $filters = [];
 
-                        $g = $adminUrlGenerator
-                            ->unsetAll()
-                            ->setController(RecordCrudController::class)
-                            ->setAction(Action::INDEX);
-                        if (
-                            isset($parsedQuery['filters']['date']['comparison']) &&
-                            $parsedQuery['filters']['date']['comparison'] === 'between'
-                        ) {
-                            $filters['date'] = [
-                                'comparison' => 'between',
-                                'value' => $from->format('Y-m-d'),
-                                'value2' => $to->format('Y-m-d'),
-                            ];
+                            $g = $adminUrlGenerator
+                                ->unsetAll()
+                                ->setController(RecordCrudController::class)
+                                ->setAction(Action::INDEX);
+                            if (
+                                isset($parsedQuery['filters']['date']['comparison']) &&
+                                $parsedQuery['filters']['date']['comparison'] === 'between'
+                            ) {
+                                $filters['date'] = [
+                                    'comparison' => 'between',
+                                    'value' => $from->format('Y-m-d'),
+                                    'value2' => $to->format('Y-m-d'),
+                                ];
+                            }
+                            if (
+                                isset($parsedQuery['filters']['account']['comparison']) &&
+                                $parsedQuery['filters']['account']['comparison'] === '='
+                            ) {
+                                $filters['account'] = [
+                                    'comparison' => '=',
+                                    'value' => $accounts,
+                                ];
+                            }
+
+                            $g->set('filters', $filters);
+
+                            return new JsonResponse(['redirect' => $g->generateUrl()]);
                         }
-                        if (
-                            isset($parsedQuery['filters']['account']['comparison']) &&
-                            $parsedQuery['filters']['account']['comparison'] === '='
-                        ) {
-                            $filters['account'] = [
-                                'comparison' => '=',
-                                'value' => $accounts,
-                            ];
-                        }
-
-                        $g->set('filters', $filters);
-
-                        return new JsonResponse(['redirect' => $g->generateUrl()]);
                     }
 
                     return new JsonResponse(['redirect' => $fromUrl]);
@@ -208,5 +224,62 @@ class AdminController extends AbstractController
 
         $response = new JsonResponse();
         return $response->setContent(json_encode($content));
+    }
+
+    #[Route('/admin/export/categoryRules', name: 'admin_export_category_rules', methods: [Request::METHOD_GET])]
+    public function exportCategoryRules(Request $request): Response
+    {
+        $dateTime = new DateTime();
+        $fileName = $dateTime->format('Y-m-d-H-i-s') . '_category_rules.json';
+
+        return new StreamedJsonResponse(
+            $this->rulesService->getExportData(),
+            200,
+            [
+                'Content-Type' => 'application/json; charset=utf-8',
+                "Content-Disposition" => HeaderUtils::makeDisposition(
+                    HeaderUtils::DISPOSITION_ATTACHMENT,
+                    $fileName,
+                ),
+                "Cache-Control" => "max-age=0"
+            ]
+        );
+    }
+
+    /**
+     * @throws Exception
+     */
+    #[Route('/admin/import/categoryRules', name: 'admin_import_category_rules', methods: [Request::METHOD_GET, Request::METHOD_POST])]
+    public function importCategoryRules(Request $request): Response
+    {
+        $url = $this->adminUrlGenerator->setController(CategoryRuleCrudController::class)
+            ->setAction(Action::INDEX);
+
+        $file = $request->files->get('importRulesFile');
+        if (null === $file) {
+            $this->addFlash('danger', 'No file was uploaded.');
+
+            return new RedirectResponse($url->generateUrl());
+        }
+        $rules = json_decode($file->getContent(), true);
+        if (empty($rules)) {
+            $this->addFlash('danger', 'Invalid file contents');
+
+            return new RedirectResponse($url->generateUrl());
+        }
+
+        if (!$this->rulesService->validateRules($rules)) {
+            $this->addFlash('danger', 'Invalid rules');
+
+            return new RedirectResponse($url->generateUrl());
+        }
+
+        $this->rulesService->importData($rules);
+        $this->addFlash('success', sprintf(
+            'New rules have been installed! You may want to scan records by going to <a href="%s">Unmatched records</a>',
+            '/admin?routeName=admin_unmatched_records'
+        ));
+
+        return new RedirectResponse($url->generateUrl());
     }
 }

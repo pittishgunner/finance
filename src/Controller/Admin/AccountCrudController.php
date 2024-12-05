@@ -23,6 +23,9 @@ class AccountCrudController extends AbstractCrudController
         yield TextField::new('alias');
         yield TextField::new('bank');
         yield TextField::new('currency');
+        yield BooleanField::new('defaultAccount')
+            ->setHelp('Default accounts will be pre-selected in the filters')
+        ;
         yield BooleanField::new('enabled');
         yield TextField::new('iban');
         yield TextField::new('description');

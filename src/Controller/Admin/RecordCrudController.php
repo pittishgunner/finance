@@ -17,6 +17,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\NumberField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\EntityFilter;
+use EasyCorp\Bundle\EasyAdminBundle\Filter\NullFilter;
 use eduMedia\TagBundle\Admin\Field\TagField;
 
 class RecordCrudController extends AbstractCrudController
@@ -83,7 +84,8 @@ class RecordCrudController extends AbstractCrudController
             ->add('description')
             ->add('debit')
             ->add('credit')
-            ->add('category')
+            //->add('category')
+            ->add(EntityFilter::new('category')->canSelectMultiple())
             ->add('subCategory');
     }
 }

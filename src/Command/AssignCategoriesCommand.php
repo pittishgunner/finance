@@ -24,7 +24,7 @@ class AssignCategoriesCommand extends LoggableCommand
     /**
      * @var CategoryRule[]
      */
-    private $rules = [];
+    private array $rules = [];
 
     protected function configure(): void
     {
