@@ -126,7 +126,7 @@ class RulesService
                 ];
             }
             $d[] = [
-                'category' => $category->getName(),
+                'name' => $category->getName(),
                 'subcategories' => $subcategories,
             ];
         }
