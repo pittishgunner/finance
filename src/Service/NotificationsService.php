@@ -2,25 +2,14 @@
 
 namespace App\Service;
 
-use App\Controller\Admin\RecordCrudController;
-use App\Entity\Notification;
-use App\Entity\Record;
-use App\Helpers\Parser;
 use App\Repository\AccountRepository;
 use App\Repository\CategoryRuleRepository;
 use App\Repository\RecordRepository;
 use App\Repository\SubscriptionRepository;
 use App\Repository\UserRepository;
-use DateTime;
-use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
-use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGenerator;
-use Symfony\Bundle\FrameworkBundle\Console\Application;
-use Symfony\Component\Console\Input\ArrayInput;
-use Symfony\Component\Console\Output\NullOutput;
 use Symfony\Component\HttpKernel\KernelInterface;
-use WebPush\Action as WebPushAction;
 use WebPush\Message;
 use WebPush\Subscription as WebPushSubscription;
 use WebPush\WebPush;
@@ -28,14 +17,7 @@ use WebPush\WebPush;
 class NotificationsService
 {
     public function __construct(
-        private EntityManagerInterface $entityManager,
-        private RecordRepository       $recordRepository,
-        private CategoryRuleRepository $categoryRuleRepository,
-        private AccountRepository      $accountRepository,
-        private UserRepository         $userRepository,
-        private KernelInterface        $kernel,
-        private WebPush                $webPush,
-        private AdminUrlGenerator      $adminUrlGenerator, private readonly SubscriptionRepository $subscriptionRepository,
+        private readonly SubscriptionRepository $subscriptionRepository,
         private readonly WebPush       $webPushService,
     )
     {

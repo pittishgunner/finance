@@ -4,11 +4,14 @@ namespace App\Repository;
 
 use App\Entity\Account;
 use App\Entity\Record;
+use App\Entity\Tag;
+use App\Entity\Tagging;
 use App\Repository\AccountRepository;
 use DateTime;
 use DateTimeInterface;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Common\Collections\Criteria;
+use Doctrine\ORM\Query\Expr\Join;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 

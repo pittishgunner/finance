@@ -179,6 +179,26 @@ export default class extends Controller {
         };
 
         event.detail.config.plugins = [htmlLegendPlugin];
+        function beforeTitle(context) {
+            alert(context);
+        }
+
+        event.detail.config.options.plugins.tooltip.callbacks = {
+            afterBody(context) {
+                console.error(context);
+                console.warn(context[0].dataset.tagData[context[0].dataIndex]);
+                let body = '';
+                for (const [key, value] of Object.entries(context[0].dataset.tagData[context[0].dataIndex])) {
+                    let valueRounded = (Math.round(value * 100) / 100).toFixed(2);
+                    body += `${key}: ${valueRounded}` + '\n';
+                }
+
+                return body;
+
+
+                //return context[0].dataset.tagData.map(item => item).join('\n');
+            },
+        };
 
         // For instance you can format Y axis
         // To avoid overriding existing config, you should distinguish 3 cases:

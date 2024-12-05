@@ -328,6 +328,9 @@ class DashboardController extends AbstractDashboardController
                 ],
                 'htmlLegend' => [
                     'containerID' => 'legend-container',
+                ],
+                'tooltip' => [
+                    'callbacks' => [ ],
                 ]
 //                'interaction' => [
 //                    'intersect' => false,

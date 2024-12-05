@@ -30,7 +30,7 @@ class ChartDataService
                 break;
         }
         $records = $this->recordRepository->dailyForPeriod($from, $to, $accountIds);
-        $byDate = $labels = [];
+        $byDate = $labels = $tagsByCategoryString = [];
         $allCategoriesInSet = [
             'total' => [
                 'label' => 'Total spent',
@@ -48,7 +48,6 @@ class ChartDataService
             if (!isset($allCategoriesInSet[$categoryString])) {
                 $allCategoriesInSet[$categoryString] = [];
             }
-            //echo $categoryString . "<br/>";
 
             $date = $record->getDate()->format($format);
             if (!isset($byDate[$date]['total'])) {
@@ -61,12 +60,23 @@ class ChartDataService
                 $byDate[$date][$categoryString] = 0;
             }
             $byDate[$date][$categoryString] = $byDate[$date][$categoryString] + $record->getDebit();
+
+
+            $tags = $this->tagService->getTagNames($record, true);
+            foreach ($tags as $tag) {
+                if (!isset($tagsByCategoryString[$date][$categoryString][$tag])) {
+                    $tagsByCategoryString[$date][$categoryString][$tag] = 0;
+                }
+                $tagsByCategoryString[$date][$categoryString][$tag] += $record->getDebit();
+            }
         }
+
         $dataSets = [];
         foreach ($allCategoriesInSet as $dataSetKey => $dataSetOptions) {
             $dataSet = [
                 'label' => $dataSetOptions['label'] ?? $dataSetKey,
                 'data' => [],
+                'tagData' => [],
             ];
             if (!empty($dataSetOptions['backgroundColor'])) {
                 $dataSet['backgroundColor'] = $dataSetOptions['backgroundColor'];
@@ -77,31 +87,34 @@ class ChartDataService
             if (!empty($dataSetOptions['color'])) {
                 $dataSet['color'] = $dataSetOptions['color'];
             }
+
             foreach ($byDate as $date => $categories) {
                 if (isset($categories[$dataSetKey])) {
                     $dataSet['data'][] = $categories[$dataSetKey];
                 } else {
                     $dataSet['data'][] = 0;
                 }
+               /* if ($dataSetKey !== 'total') {
+                    dump($tagsByCategoryString);
+                    dump($tagsByCategoryString[$date][$dataSetKey]);
+
+                    dump($date);
+                    dd($categories);
+                }*/
+
+                $tagData = [];
+                if (!empty($tagsByCategoryString[$date][$dataSetKey])) {
+                    foreach ($tagsByCategoryString[$date][$dataSetKey] as $tagKey => $tagValue) {
+                        $tagData[$tagKey] = +$tagValue;
+                    }
+                }
+
+                $dataSet['tagData'][] = $tagData;
             }
 
             $dataSets[] = $dataSet;
         }
-//        dump($byDate);
-//        dd($dataSets);
-        //dump($allCategoriesInSet);dd($byDate);
-
-//
-//        $dataSets[0] = [
-//            'label' => 'Total spent',
-//            'backgroundColor' => 'rgb(255, 99, 132)',
-//            'borderColor' => 'rgb(255, 99, 132)',
-//            'data' => $totalSpent,
-//        ];
-        //dump($labels);
-        //dd($dataSets);
-
-
+        //dump($tagsByCategoryString);dd($dataSets);
         return [
             'labels' => $labels,
             'datasets' => $dataSets,

@@ -62,7 +62,7 @@ class RecordCrudController extends AbstractCrudController
             ->setEntityLabelInSingular('Transaction')
             ->setEntityLabelInPlural('Transactions')
             ->setPageTitle(Crud::PAGE_INDEX, 'Transactions')
-            ->setDefaultSort(['date' => 'DESC'])
+            ->setDefaultSort(['notifiedAt' => 'DESC', 'date' => 'DESC'])
             ->setPaginatorPageSize(500)
             ->overrideTemplate('crud/index', 'admin/record/index.html.twig')
             //->showEntityActionsInlined()

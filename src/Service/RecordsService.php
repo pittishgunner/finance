@@ -143,7 +143,8 @@ class RecordsService
             $this->entityManager->persist($Notification);
             $this->entityManager->flush();
 
-            //TODO - move this only for count($Records) > 0
+            // TODO - move this only for count($Records) > 0
+            // TODO - add setting per user to skip notifications (eg for Round Up)
             $this->notificationsService->notifySubscribedUsers($message);
         }
 
