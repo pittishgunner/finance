@@ -197,8 +197,10 @@ export default class extends Controller {
                 let body = '';
                 for (const [key, value] of Object.entries(context[0].dataset.tagData[context[0].dataIndex])) {
                     let valueRounded = (Math.round(value * 100) / 100).toFixed(2);
-                    body += `${key}: ${valueRounded}` + '\n';
+                    body += '\n' + `${key}: ${valueRounded}`;
                 }
+
+                //body += '\n' + context[0].dataset.url[context[0].dataIndex];
 
                 return body;
 
@@ -206,6 +208,9 @@ export default class extends Controller {
                 //return context[0].dataset.tagData.map(item => item).join('\n');
             },
         };
+        // event.detail.chart.options.onClick = (e) => {
+        //     console.warn(e);
+        // };
 
         // For instance you can format Y axis
         // To avoid overriding existing config, you should distinguish 3 cases:
@@ -238,14 +243,24 @@ export default class extends Controller {
     _onConnect(event) {
         // The chart was just created
         //console.log(event.detail.chart); // You can access the chart instance using the event details
-        charts.push(event.detail.chart);
-
-        // For instance you can listen to additional events
-        event.detail.chart.options.onHover = (mouseEvent) => {
-            //console.warn(mouseEvent);
-        };
+         charts.push(event.detail.chart);
+        //
+        // // For instance you can listen to additional events
+        // event.detail.chart.options.onHover = (mouseEvent) => {
+        //     //console.warn(mouseEvent);
+        // };
         event.detail.chart.options.onClick = (mouseEvent) => {
-            /* ... */
+            const points = event.detail.chart.getElementsAtEventForMode(mouseEvent, 'nearest', {
+                intersect: true
+            }, true);
+            if (points.length) {
+                const firstPoint = points[0];
+                const dataset = firstPoint.datasetIndex;
+                const index = firstPoint.index;
+                window.open(
+                    event.detail.chart.data.datasets[dataset].url[index], "_blank"
+                );
+            }
         };
     }
 

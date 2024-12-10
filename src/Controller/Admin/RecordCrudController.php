@@ -85,8 +85,10 @@ class RecordCrudController extends AbstractCrudController
             ->add('description')
             ->add('debit')
             ->add('credit')
+            // TODO - add custom filter to combine category and NULL
             //->add('category')
             ->add(EntityFilter::new('category')->canSelectMultiple())
-            ->add('subCategory');
+            ->add(EntityFilter::new('subCategory')->canSelectMultiple())
+            ;
     }
 }

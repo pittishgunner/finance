@@ -28,9 +28,25 @@ class RecordRepository extends ServiceEntityRepository
         $this->accountRepository = $accountRepository;
     }
 
+    public function getUnmatchedRecords(string $from, string $to, array $accountIds = []): array
+    {
+        $accounts = $this->accountRepository->findBy(['id' => $accountIds]);
+        $qb = $this->qbByRange($from, $to)
+            ->andWhere('r.account IN (:accounts)')
+            ->setParameter('accounts', $accounts)
+            ->andWhere('r.category IS NULL')
+//            ->orderBy('r.debit', 'DESC')
+            ->orderBy('r.date', 'DESC')
+            ->addOrderBy('r.notifiedAt', 'DESC')
+        ;
+
+        return $qb->getQuery()->getResult();
+    }
+
     /**
-     * @param string $year
-     * @param string $month
+     * @param string $from
+     * @param string $to
+     * @param array $accountIds
      * @return Record[]
      */
     public function dailyForPeriod(string $from, string $to, array $accountIds = []): array

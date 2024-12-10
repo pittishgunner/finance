@@ -35,10 +35,10 @@ class RecordsService
     /**
      * @throws Exception
      */
-    public function getUnmatchedRecords(): array
+    public function getUnmatchedRecords(string $from, string $to, array $accountIds = []): array
     {
         $prepared = [];
-        $unmatchedRecords = $this->recordRepository->findBy(['category' => null], ['date' => 'DESC']);
+        $unmatchedRecords = $this->recordRepository->getUnmatchedRecords($from, $to, $accountIds);
         foreach ($unmatchedRecords as $record) {
             $parser = Parser::getBankCsvParser($record->getAccount()->getIban());
             $parsedData = $parser->getUnmatchedData($record);

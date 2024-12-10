@@ -95,16 +95,18 @@ class DashboardController extends AbstractDashboardController
                 $_GET['filters']['date']['value2'] !== $this->dateRange['to']
             )
         ) {
-            $from = DateTime::createFromFormat('Y-m-d', $_GET['filters']['date']['value']);
-            $to = DateTime::createFromFormat('Y-m-d', $_GET['filters']['date']['value2']);
-            if ($from && $to) {
-                $this->dateRange = [
-                    'readable' => $from->format('d M Y') . ' - ' . $to->format('d M Y') ?? '',
-                    'from' => $_GET['filters']['date']['value'],
-                    'to' => $_GET['filters']['date']['value2'],
-                ];
+            if (!isset($_GET['skipSettingSession'])) {
+                $from = DateTime::createFromFormat('Y-m-d', $_GET['filters']['date']['value']);
+                $to = DateTime::createFromFormat('Y-m-d', $_GET['filters']['date']['value2']);
+                if ($from && $to) {
+                    $this->dateRange = [
+                        'readable' => $from->format('d M Y') . ' - ' . $to->format('d M Y') ?? '',
+                        'from' => $_GET['filters']['date']['value'],
+                        'to' => $_GET['filters']['date']['value2'],
+                    ];
 
-                $session->set('dateRange', $this->dateRange);
+                    $session->set('dateRange', $this->dateRange);
+                }
             }
         }
     }
@@ -180,7 +182,7 @@ class DashboardController extends AbstractDashboardController
 
         return $this->render('admin/unmatched.html.twig', [
             'content' => $content,
-            'records' => $this->recordsService->getUnmatchedRecords(),
+            'records' => $this->recordsService->getUnmatchedRecords($this->dateRange['from'], $this->dateRange['to'], $this->accounts['selected']),
             'rules' => $this->recordsService->getRulesTree(),
         ]);
     }
