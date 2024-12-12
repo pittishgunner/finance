@@ -4,6 +4,7 @@ namespace App\Parser;
 
 use App\Entity\Record;
 use DateTime;
+use Exception;
 use SplFileObject;
 
 class BTRL extends BaseParser
@@ -13,6 +14,9 @@ class BTRL extends BaseParser
         return 'Banca Transilvania';
     }
 
+    /**
+     * @throws Exception
+     */
     public function parseFile(?SplFileObject $fileData): array
     {
         $data = [];
@@ -25,6 +29,9 @@ class BTRL extends BaseParser
                     continue;
                 }
                 $date = DateTime::createFromFormat('Y-m-d', $line[0]);
+                if (!$date) {
+                    throw new Exception('Could not parse a date for ' . $line[2]);
+                }
                 $data[] = [
                     'date' => $date->format('Y-m-d'),
                     'debit' => abs(self::getFloatValue($line[4])),

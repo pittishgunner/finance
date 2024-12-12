@@ -16,6 +16,15 @@ export default class extends Controller {
                 document.getElementById('importRulesSubmit'),
             );
         }
+
+        if (document.getElementById('importRecordsButton') != null) {
+            this.importRecordsHandler(
+                document.getElementById('importRecordsButton'),
+                document.getElementById('importRecordsFile'),
+                document.getElementById('importRecordsAccount'),
+                document.getElementById('importRecordsSubmit'),
+            );
+        }
     }
 
     async importRulesHandler(button, file, submit) {
@@ -26,6 +35,25 @@ export default class extends Controller {
         file.addEventListener('change', function (event) {
             button.querySelector('span').innerHTML = ' - ' + file.value.replace(/C:\\fakepath\\/ig,'');
             submit.classList.remove('d-none');
+        });
+    }
+
+    async importRecordsHandler(button, file, account, submit) {
+        button.addEventListener('click', function (event){
+            event.preventDefault();
+            file.click();
+            submit.classList.add('d-none');
+        });
+        file.addEventListener('change', function (event) {
+            button.querySelector('span').innerHTML = ' - ' + file.value.replace(/C:\\fakepath\\/ig,'');
+            account.classList.remove('d-none');
+        });
+        account.addEventListener('change', function (event) {
+            if (account.value !== '') {
+                submit.classList.remove('d-none');
+            } else {
+                submit.classList.add('d-none');
+            }
         });
     }
 }

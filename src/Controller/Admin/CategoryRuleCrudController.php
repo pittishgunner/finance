@@ -155,6 +155,7 @@ class CategoryRuleCrudController extends AbstractCrudController
     data-submit-confirm-icon-value="warning"
     data-submit-confirm-confirm-button-text-value="Yes, I want to proceed"
     data-submit-confirm-submit-async-value=""
+    style="display: inline-block"
 >
     <button id="importRulesButton" class="btn-info btn">
         Replace Rules by JSON <span></span>

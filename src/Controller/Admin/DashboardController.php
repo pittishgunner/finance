@@ -116,11 +116,13 @@ class DashboardController extends AbstractDashboardController
     public function index(ChartBuilderInterface $chartBuilder = null): Response
     {
         assert(null !== $chartBuilder);
-        $type = $this->requestStack->getCurrentRequest()->query->get('type') ?? 'daily';
+        $type = $this->requestStack->getCurrentRequest()->query->get('type') ?? 'expenses';
+        $graphType = $this->requestStack->getCurrentRequest()->query->get('graphType') ?? 'daily';
 
         return $this->render('admin/index.html.twig', [
-            'chart' => $this->createChart($chartBuilder, $type),
+            'chart' => $this->createChart($chartBuilder, $type, $graphType),
             'type' => $type,
+            'graphType' => $graphType,
         ]);
     }
 
@@ -167,6 +169,21 @@ class DashboardController extends AbstractDashboardController
     {
         $application = new Application($kernel);
         $application->setAutoExit(false);
+        $content = '';
+
+        if (isset($_GET['importToo'])) {
+            $input = new ArrayInput([
+                'command' => 'import-csv',
+            ]);
+
+            // You can use NullOutput() if you don't need the output
+            $output = new BufferedOutput();
+            $application->run($input, $output);
+
+            // return the output, don't use if you used NullOutput()
+            $content .= $output->fetch();
+        }
+
 
         $input = new ArrayInput([
             'command' => 'assign-categories',
@@ -178,7 +195,7 @@ class DashboardController extends AbstractDashboardController
         $application->run($input, $output);
 
         // return the output, don't use if you used NullOutput()
-        $content = $output->fetch();
+        $content .= $output->fetch();
 
         return $this->render('admin/unmatched.html.twig', [
             'content' => $content,
@@ -296,10 +313,10 @@ class DashboardController extends AbstractDashboardController
             ->addWebpackEncoreEntry('admin');
     }
 
-    private function createChart(ChartBuilderInterface $chartBuilder, string $type = 'daily'): Chart
+    private function createChart(ChartBuilderInterface $chartBuilder, string $type = 'expenses', string $graphType = 'daily'): Chart
     {
         $chart = $chartBuilder->createChart(Chart::TYPE_BAR);
-        $chart->setData($this->chartDataService->groupedExpenses($this->dateRange['from'], $this->dateRange['to'], $type, $this->accounts['selected']));
+        $chart->setData($this->chartDataService->groupedRecords($this->dateRange['from'], $this->dateRange['to'], $type, $graphType, $this->accounts['selected']));
 
         $chart->setOptions([
             'plugins' => [

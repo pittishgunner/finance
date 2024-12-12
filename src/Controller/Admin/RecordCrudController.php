@@ -3,6 +3,7 @@
 namespace App\Controller\Admin;
 
 use App\Entity\Record;
+use App\Repository\AccountRepository;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
@@ -22,6 +23,10 @@ use eduMedia\TagBundle\Admin\Field\TagField;
 
 class RecordCrudController extends AbstractCrudController
 {
+    public function __construct(private readonly AccountRepository $accountRepository)
+    {
+    }
+
     public static function getEntityFqcn(): string
     {
         return Record::class;
@@ -62,7 +67,7 @@ class RecordCrudController extends AbstractCrudController
         return parent::configureCrud($crud)
             ->setEntityLabelInSingular('Transaction')
             ->setEntityLabelInPlural('Transactions')
-            ->setPageTitle(Crud::PAGE_INDEX, 'Transactions')
+            ->setPageTitle(Crud::PAGE_INDEX, 'Transactions ' . $this->getImportRecordsHtml())
             ->setDefaultSort(['notifiedAt' => 'DESC', 'date' => 'DESC'])
             ->setPaginatorPageSize(500)
             ->overrideTemplate('crud/index', 'admin/record/index.html.twig')
@@ -85,10 +90,40 @@ class RecordCrudController extends AbstractCrudController
             ->add('description')
             ->add('debit')
             ->add('credit')
-            // TODO - add custom filter to combine category and NULL
-            //->add('category')
             ->add(EntityFilter::new('category')->canSelectMultiple())
             ->add(EntityFilter::new('subCategory')->canSelectMultiple())
-            ;
+        ;
+    }
+
+    private function getImportRecordsHtml()
+    {
+        $accounts = $this->accountRepository->findAll();
+        $selection = '';
+        foreach ($accounts as $account) {
+            $selection .= '<option value="' . $account->getId() . '">' . $account->getAlias() . '</option>';
+        }
+        return '
+<form action="' . $this->generateUrl('admin_import_records_file') . '" method="POST" enctype="multipart/form-data"
+    data-controller="submit-confirm"
+    data-action="submit-confirm#onSubmit"
+    data-submit-confirm-title-value="This will delete all your current Categories, Subcategories and Rules!"
+    data-submit-confirm-icon-value="warning"
+    data-submit-confirm-confirm-button-text-value="Yes, I want to proceed"
+    data-submit-confirm-submit-async-value=""
+    style="display: inline-block"
+>
+    <button id="importRecordsButton" class="btn-info btn">
+        Import Transactions CSV File <span></span>
+    </button>
+    <input id="importRecordsFile" type="file" accept=".csv" name="importRecordsFile" class="d-none" />
+    <select id="importRecordsAccount" name="importRecordsAccount"
+            style="font-size: 16px" class="d-none">
+        <option value="">Please select an account</option>
+        ' . $selection . '        
+    </select>
+    <button id="importRecordsSubmit" class="btn-primary btn d-none">
+        Import
+    </button>        
+</form>';
     }
 }

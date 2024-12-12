@@ -6,6 +6,8 @@ use App\Entity\Category;
 use App\Entity\CategoryRule;
 use App\Entity\SubCategory;
 use App\Entity\Subscription;
+use App\Helpers\Parser;
+use App\Repository\AccountRepository;
 use App\Repository\SubscriptionRepository;
 use App\Service\NotificationsService;
 use App\Service\RulesService;
@@ -15,7 +17,11 @@ use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGenerator;
 use JsonException;
+use SplFileObject;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
+use Symfony\Component\Finder\Finder;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -31,12 +37,12 @@ use WebPush\WebPush;
 class AdminController extends AbstractController
 {
     public function __construct(
-        private EntityManagerInterface $entityManager,
-        private readonly WebPush       $webPushService,
-        private SubscriptionRepository $subscriptionRepository,
+        private EntityManagerInterface        $entityManager,
+        private readonly WebPush              $webPushService,
+        private SubscriptionRepository        $subscriptionRepository,
         private readonly NotificationsService $notificationsService,
-        private readonly RulesService $rulesService,
-        private AdminUrlGenerator $adminUrlGenerator,
+        private readonly RulesService         $rulesService,
+        private AdminUrlGenerator             $adminUrlGenerator, private readonly AccountRepository $accountRepository,
     ) {
 
     }
@@ -279,6 +285,77 @@ class AdminController extends AbstractController
             'New rules have been installed! You may want to scan records by going to <a href="%s">Unmatched records</a>',
             '/admin?routeName=admin_unmatched_records'
         ));
+
+        return new RedirectResponse($url->generateUrl());
+    }
+
+    /**
+     * @throws Exception
+     */
+    #[Route('/admin/import/recordsFile', name: 'admin_import_records_file', methods: [Request::METHOD_GET, Request::METHOD_POST])]
+    public function importRecordsFile(Request $request, ParameterBagInterface  $params): Response
+    {
+        $url = $this->adminUrlGenerator->setController(RecordCrudController::class)
+            ->setAction(Action::INDEX);
+        $Account = $this->accountRepository->find($request->get('importRecordsAccount'));
+        $parser = Parser::getBankCsvParser($Account->getIban());
+
+        /** @var ?UploadedFile $file */
+        $file = $request->files->get('importRecordsFile');
+        if (null === $file) {
+            $this->addFlash('danger', 'No file was uploaded.');
+
+            return new RedirectResponse($url->generateUrl());
+        }
+        try {
+            $csvFile = new SplFileObject($file->getRealPath());
+            $csvFile->setFlags(SplFileObject::READ_CSV | SplFileObject::SKIP_EMPTY | SplFileObject::READ_AHEAD | SplFileObject::DROP_NEW_LINE);
+
+            $records = $parser->parseFile($csvFile);
+        } catch (\Exception $e) {
+            $this->addFlash('danger', 'Could not parse CSV file for account: ' . $Account->getIban());
+
+            return new RedirectResponse($url->generateUrl());
+        }
+        if (empty($records)) {
+            $this->addFlash('danger', 'Invalid file contents');
+
+            return new RedirectResponse($url->generateUrl());
+        }
+        $recordsByDate = [];
+        foreach ($records as $record) {
+            $recordsByDate[$record['date']][] = $record;
+        }
+        ksort($recordsByDate);
+        $firstKey = array_key_first($recordsByDate);
+        $lastKey = array_key_last($recordsByDate);
+
+        $finder = new Finder();
+        $finder->directories()
+            ->in(
+                realpath($params->get('projectDir')) . DIRECTORY_SEPARATOR .
+                $params->get('storagePath') . DIRECTORY_SEPARATOR .'csv' . DIRECTORY_SEPARATOR)
+            ->name($Account->getIban() . '*');
+
+        if (!$finder->hasResults()) {
+            $this->addFlash('danger', 'Could not find a folder for your account');
+
+            return new RedirectResponse($url->generateUrl());
+        }
+
+        foreach ($finder as $folder) {
+            $newFileName = $firstKey . '-' . $lastKey . '.csv';
+            $file->move($folder->getRealPath(), $newFileName);
+
+            $this->addFlash('success', sprintf(
+                'Your file has %d total records for %d individual days. It was moved to the file: %s. You can now go to <a href="%s">Unmatched records</a> to import and match the new file.',
+                count($records),
+                count($recordsByDate),
+                $newFileName,
+                '/admin?routeName=admin_unmatched_records&importToo=1'
+            ));
+
+        }
 
         return new RedirectResponse($url->generateUrl());
     }

@@ -4,6 +4,7 @@ namespace App\Parser;
 
 use App\Entity\Record;
 use DateTime;
+use Exception;
 use SplFileObject;
 
 class REVO extends BaseParser
@@ -54,6 +55,9 @@ class REVO extends BaseParser
         return ['unmatched' => $text];
     }
 
+    /**
+     * @throws Exception
+     */
     public function parseFile(?SplFileObject $fileData): array
     {
         $data = [];
@@ -66,6 +70,9 @@ class REVO extends BaseParser
                     continue;
                 }
                 $date = DateTime::createFromFormat('Y-m-d H:i:s', $line[2]);
+                if (!$date) {
+                    throw new Exception('Could not parse a date for ' . $line[2]);
+                }
                 $amount = self::getFloatValue($line[5]);
 
                 $data[] = [

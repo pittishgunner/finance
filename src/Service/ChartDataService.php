@@ -19,19 +19,19 @@ class ChartDataService
     {
     }
 
-    public function groupedExpenses(string $from, string $to, string $type = 'daily', array $accountIds = []): array
+    public function groupedRecords(string $from, string $to, string $type = 'expenses', string $graphType = 'daily', array $accountIds = []): array
     {
-        $format = match ($type) {
+        $format = match ($graphType) {
             'weekly' => 'W Y',
             'monthly' => 'M Y',
             'yearly' => 'Y',
             default => 'j M Y',
         };
-        $records = $this->recordRepository->dailyForPeriod($from, $to, $accountIds);
+        $records = $this->recordRepository->dailyForPeriod($from, $to, $accountIds, $type);
         $byDate = $labels = $datePeriods = $catSubCat = $tagsByCategoryString = [];
         $allCategoriesInSet = [
             'total' => [
-                'label' => 'Total spent',
+                'label' => 'Total ' . ($type === 'expenses' ? 'spent' : 'income'),
                 'backgroundColor' => 'rgb(255, 99, 132)',
                 'borderColor' => 'rgb(255, 99, 132)',
                 'color' => 'rgb(0, 0, 0)',
@@ -55,7 +55,7 @@ class ChartDataService
             if (!isset($byDate[$date]['total'])) {
                 $byDate[$date]['total'] = 0;
                 $labels[] = $date;
-                switch ($type) {
+                switch ($graphType) {
                     case 'weekly':
                         $dto = new DateTime();
                         $dto->setISODate($record->getDate()->format('Y'), $record->getDate()->format('W'));
@@ -78,12 +78,12 @@ class ChartDataService
                 }
                 $datePeriods[] = $period;
             }
-            $byDate[$date]['total'] = $byDate[$date]['total'] + $record->getDebit();
+            $byDate[$date]['total'] = $byDate[$date]['total'] + ($type === 'expenses' ? $record->getDebit() : $record->getCredit());
 
             if (!isset($byDate[$date][$categoryString])) {
                 $byDate[$date][$categoryString] = 0;
             }
-            $byDate[$date][$categoryString] = $byDate[$date][$categoryString] + $record->getDebit();
+            $byDate[$date][$categoryString] = $byDate[$date][$categoryString] + ($type === 'expenses' ? $record->getDebit() : $record->getCredit());
 
 
             $tags = $this->tagService->getTagNames($record, true);
@@ -91,7 +91,7 @@ class ChartDataService
                 if (!isset($tagsByCategoryString[$date][$categoryString][$tag])) {
                     $tagsByCategoryString[$date][$categoryString][$tag] = 0;
                 }
-                $tagsByCategoryString[$date][$categoryString][$tag] += $record->getDebit();
+                $tagsByCategoryString[$date][$categoryString][$tag] += ($type === 'expenses' ? $record->getDebit() : $record->getCredit());
             }
         }
 
@@ -144,6 +144,15 @@ class ChartDataService
                         $filters['subCategory'] = [
                             'comparison' => '=',
                             'value' => [explode(' ', $catSubCat[$dataSetKey])[1]],
+                        ];
+                    } else {
+                        $filters['category'] = [
+                            'comparison' => '=',
+                            'value' => [],
+                        ];
+                        $filters['subCategory'] = [
+                            'comparison' => '=',
+                            'value' => [],
                         ];
                     }
                 }

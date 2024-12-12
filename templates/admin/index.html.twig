@@ -2,6 +2,10 @@
 
 {% block page_title %}
     Munteanu Finance Dashboard
+<div class="btn-group" style="float: right; margin-right: 8px">
+    <a class="btn btn-outline-light {{ type == 'expenses' ? 'btn-primary' : '' }}" href="/admin?type=expenses">Expenses</a>
+    <a class="btn btn-outline-light {{ type == 'incomes' ? 'btn-primary' : '' }}" href="/admin?type=incomes">Incomes</a>
+</div>
 {% endblock %}
 
 {% block main %}
@@ -12,10 +16,10 @@
                     <button class="btn btn-secondary" data-charts-target="toggle" data-action="click->charts#onToggle">Toggle all</button>
                     <button class="btn btn-secondary d-none" data-charts-target="zoomOut" id="zoomOutButton" data-action="click->charts#zoomOut">Zoom out</button>
                     <div class="btn-group" style="float: right; margin-right: 8px">
-                        <a class="btn btn-outline-light {{ type == 'daily' ? 'btn-primary' : '' }}" href="/admin">Daily</a>
-                        <a class="btn btn-outline-light {{ type == 'weekly' ? 'btn-primary' : '' }}" href="/admin?type=weekly">Weekly</a>
-                        <a class="btn btn-outline-light {{ type == 'monthly' ? 'btn-primary' : '' }}" href="/admin?type=monthly">Monthly</a>
-                        <a class="btn btn-outline-light {{ type == 'yearly' ? 'btn-primary' : '' }}" href="/admin?type=yearly">Yearly</a>
+                        <a class="btn btn-outline-light {{ graphType == 'daily' ? 'btn-primary' : '' }}" href="/admin?type={{ type }}&graphType=daily">Daily</a>
+                        <a class="btn btn-outline-light {{ graphType == 'weekly' ? 'btn-primary' : '' }}" href="/admin?type={{ type }}&graphType=weekly">Weekly</a>
+                        <a class="btn btn-outline-light {{ graphType == 'monthly' ? 'btn-primary' : '' }}" href="/admin?type={{ type }}&graphType=monthly">Monthly</a>
+                        <a class="btn btn-outline-light {{ graphType == 'yearly' ? 'btn-primary' : '' }}" href="/admin?type={{ type }}&graphType=yearly">Yearly</a>
                     </div>
                     <div id="legend-container"></div>
                 </div>

@@ -49,14 +49,19 @@ class RecordRepository extends ServiceEntityRepository
      * @param array $accountIds
      * @return Record[]
      */
-    public function dailyForPeriod(string $from, string $to, array $accountIds = []): array
+    public function dailyForPeriod(string $from, string $to, array $accountIds = [], string $type = 'expenses'): array
     {
         $accounts = $this->accountRepository->findBy(['id' => $accountIds]);
         $qb = $this->qbByRange($from, $to)
             ->andWhere('r.account IN (:accounts)')
-            ->setParameter('accounts', $accounts)
-            ->andWhere('r.debit > 0')
-            ->andWhere('r.ignored = :ignored')
+            ->setParameter('accounts', $accounts);
+        if ($type === 'expenses') {
+            $qb->andWhere('r.debit > 0');
+        } else {
+            $qb->andWhere('r.credit > 0');
+        }
+
+        $qb->andWhere('r.ignored = :ignored')
             ->setParameter('ignored', false)
             ->orderBy('r.date')
             ->addOrderBy('r.notifiedAt');
