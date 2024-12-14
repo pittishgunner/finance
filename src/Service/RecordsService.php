@@ -46,7 +46,7 @@ class RecordsService
                 throw new Exception('Parse error. Empty data for ' . $parser::class);
             }
             if (empty($parsedData['key'])) {
-                throw new Exception('Parse error. Key missing');
+                throw new Exception('Parse error. Key missing for record #' . $record->getId());
             }
             if (isset($prepared[$parsedData['key']]['count'])) {
                 $prepared[$parsedData['key']]['count']++;
@@ -57,6 +57,8 @@ class RecordsService
             }
         }
 
+        uasort($prepared, fn($a, $b) => $b['debit'] <=> $a['debit']); // Sort by debit
+        //uasort($prepared, fn($a, $b) => $b['credit'] <=> $a['credit']); // Sort by credit
         //uasort($prepared, fn($a, $b) => $b['count'] <=> $a['count']); // Sort by count
         //asort($prepared); // Sort ascending by title
 

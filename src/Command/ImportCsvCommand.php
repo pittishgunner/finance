@@ -15,6 +15,7 @@ use SplFileObject;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\Finder\Finder;
@@ -25,11 +26,27 @@ use Symfony\Component\Finder\Finder;
 )]
 class ImportCsvCommand extends LoggableCommand
 {
+    protected function configure(): void
+    {
+        $this->addOption('force', 'f',InputOption::VALUE_OPTIONAL, 'Force reassigning for all records. Run as symfony console assign-categories --force=true', false);
+    }
+
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->loggableOutput->output = $output;
         try {
             $this->loggableOutput->writeln('Starting import csv command for folder: ' . $this->csvPath);
+            $force = $input->getOption('force') === 'true';
+            if ($force) {
+                $connection = $this->entityManager->getConnection();
+                $platform   = $connection->getDatabasePlatform();
+                $connection->executeQuery('SET FOREIGN_KEY_CHECKS = 0;');
+                foreach (['imported_file', 'record', 'tag', 'tagging'] as $table) {
+                    $truncateSql = $platform->getTruncateTableSQL($table);
+                    $connection->executeStatement($truncateSql);
+                }
+                $connection->executeQuery('SET FOREIGN_KEY_CHECKS = 1;');
+            }
             $csvFiles = $this->getCsvFiles();
 
             $this->loggableOutput->writeln('Got local csv data and existing DB data');

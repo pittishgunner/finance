@@ -121,6 +121,7 @@ class DashboardController extends AbstractDashboardController
 
         return $this->render('admin/index.html.twig', [
             'chart' => $this->createChart($chartBuilder, $type, $graphType),
+            'tagsChart' => $this->createTagsChart($chartBuilder, $type, $graphType),
             'type' => $type,
             'graphType' => $graphType,
         ]);
@@ -362,6 +363,86 @@ class DashboardController extends AbstractDashboardController
                 ],
             ],
         ]);
+
+
+        //dd($chart->getOptions());
+
+
+        return $chart;
+    }
+
+    private function createTagsChart(ChartBuilderInterface $chartBuilder, string $type = 'expenses', string $graphType = 'daily'): Chart
+    {
+        $chart = $chartBuilder->createChart('wordCloud');
+        $chart->setData($this->chartDataService->tagCount($this->dateRange['from'], $this->dateRange['to'], $type, $graphType, $this->accounts['selected']));
+
+        /*$chart->setData([
+            'labels' => ['Hello', 'world', 'normally', 'you', 'want', 'more', 'words', 'than', 'this'],
+            'datasets' => [
+                [
+                    'label' => 'DS',
+                    // size in pixel
+                    'data' => [90, 80, 70, 60, 50, 40, 30, 20, 10],
+                ],
+            ]
+        ]);*/
+        $chart->setOptions([
+            'elements' => [
+                'word' => [
+//                    'strokeStyle' => 'red',
+//                    'strokeWidth' => 8,
+                ]
+            ],
+            'title' => [
+                'display' => true,
+            ],
+            'plugins' => [
+                'legend' => [
+                    'display' => true,
+                ]
+            ]
+        ]);
+
+       /* $chart->setOptions([
+            'plugins' => [
+                'zoom' => [
+                    'zoom' => [
+                        // 'wheel' => ['enabled' => true],
+                        //'pinch' => ['enabled' => true],
+                        'drag' => ['enabled' => true],
+                        'mode' => 'x',
+                    ],
+                ],
+                'annotation' => [
+                    'annotations' => [
+                        [
+                            'type' => 'line',
+                        ]
+                    ]
+                ],
+                'autocolors' => [
+                    'enabled' => true,
+                ],
+                'legend' => [
+                    'display' => false,
+                ],
+                'htmlLegend' => [
+                    'containerID' => 'legend-container',
+                ],
+                'tooltip' => [
+                    'callbacks' => [ ],
+                ]
+            ],
+            'responsive' => true,
+            'scales' => [
+                'x' => [
+                    'stacked' => true,
+                ],
+                'y' => [
+                    'stacked' => true,
+                ],
+            ],
+        ]);*/
 
 
         //dd($chart->getOptions());

@@ -120,9 +120,14 @@ class INGB extends BaseParser
                     }
                 }
                 if (!empty($subLine[3])) {
-                    $description .= $subLine[3] . "\n";
                     $exploded = array_map('trim', explode(':', $subLine[3]));
+                    // export will change its details after a transaction has been finished
+                    // by adding a line and spaces on each line
+                    if (!empty($exploded[0]) && $exploded[0] === 'Data finalizării(decontării)') {
+                        continue;
+                    }
 
+                    $description .= implode(':', $exploded) . "\n";
                     $details[$exploded[0]] = $exploded[1] ?? '';
                 }
             }
@@ -184,9 +189,14 @@ class INGB extends BaseParser
                     }
                 }
                 if (!empty($subLine[3])) {
-                    $description .= $subLine[3] . "\n";
                     $exploded = array_map('trim', explode(':', $subLine[3]));
+                    // export will change its details after a transaction has been finished
+                    // by adding a line and spaces on each line
+                    if (!empty($exploded[0]) && $exploded[0] === 'Data finalizării(decontării)') {
+                        continue;
+                    }
 
+                    $description .= implode(':', $exploded) . "\n";
                     $details[$exploded[0]] = $exploded[1] ?? '';
                 }
             }
@@ -234,9 +244,14 @@ class INGB extends BaseParser
                     }
                 }
                 if (!empty($subLine[1])) {
-                    $description .= $subLine[1] . "\n";
                     $exploded = array_map('trim', explode(':', $subLine[1]));
+                    // export will change its details after a transaction has been finished
+                    // by adding a line and spaces on each line
+                    if (!empty($exploded[0]) && $exploded[0] === 'Data finalizării(decontării)') {
+                        continue;
+                    }
 
+                    $description .= implode(':', $exploded) . "\n";
                     $details[$exploded[0]] = $exploded[1] ?? '';
                 }
             }

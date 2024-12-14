@@ -87,11 +87,13 @@ class RecordCrudController extends AbstractCrudController
         return parent::configureFilters($filters)
             ->add('date')
             ->add(EntityFilter::new('account')->canSelectMultiple())
-            ->add('description')
-            ->add('debit')
-            ->add('credit')
             ->add(EntityFilter::new('category')->canSelectMultiple())
             ->add(EntityFilter::new('subCategory')->canSelectMultiple())
+
+            //->add('tags')
+            ->add('debit')
+            ->add('credit')
+            ->add('description')
         ;
     }
 

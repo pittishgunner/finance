@@ -37,6 +37,7 @@
         "@mui/x-tree-view": "^7.22.1",
         "@mui/x-tree-view-pro": "^7.22.1",
         "brace": "^0.11.1",
+        "chartjs-chart-wordcloud": "^4.4.4",
         "chartjs-plugin-annotation": "^3.1.0",
         "chartjs-plugin-autocolors": "^0.3.1",
         "chartjs-plugin-zoom": "^2.2.0",

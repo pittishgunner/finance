@@ -159,7 +159,7 @@ class AdminController extends AbstractController
                         }
                     }
 
-                    return new JsonResponse(['redirect' => $fromUrl]);
+                    return new JsonResponse(['redirect' => str_replace('skipSettingSession=', 'doNotSkipSettingSession', $fromUrl)]);
                 }
             }
         }

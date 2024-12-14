@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use App\Controller\Admin\RecordCrudController;
+use App\Entity\Record;
 use App\Repository\RecordRepository;
 use DateTime;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
@@ -95,6 +96,9 @@ class ChartDataService
             }
         }
 
+        //dd($tagsByCategoryString);
+
+
         $dataSets = [];
         foreach ($allCategoriesInSet as $dataSetKey => $dataSetOptions) {
             $dataSet = [
@@ -170,6 +174,39 @@ class ChartDataService
 
             $dataSets[] = $dataSet;
         }
+
+        return [
+            'labels' => $labels,
+            'datasets' => $dataSets,
+        ];
+    }
+
+    public function tagCount(string $from, string $to, string $type = 'expenses', string $graphType = 'daily', array $accountIds = []): array
+    {
+        $allTags = $this->tagService->getTagsWithCountArray(Record::class);
+//        dump($allTags);
+//        $allTags = $this->recordRepository->getTagsWithCountArray($from, $to, $accountIds, $type);
+//        dd($allTags);
+
+        unset($allTags['Round Up']);
+//        dd($allTags);
+        $dataSet = ['label' => 'DS', 'data' => []];
+        $weighedTags = [];
+        $min = end($allTags);
+        $max = reset($allTags);
+        $range = max(.01, $max - $min) * 1.0001;
+        $steps = 100;
+
+        foreach ($allTags as $tag => $tagCount) {
+            $weighedTags[$tag] = 1 + floor($steps * ($tagCount - $min) / $range);
+        }
+
+        foreach ($weighedTags as $tag => $tagWeight) {
+            $labels[] = $tag;
+            $dataSet['data'][] = $tagWeight;
+
+        }
+        $dataSets[] = $dataSet;
 
         return [
             'labels' => $labels,

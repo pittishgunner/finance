@@ -15,10 +15,11 @@ registerReactControllerComponents(require.context('./react/controllers', true, /
 import zoomPlugin from 'chartjs-plugin-zoom';
 import annotationPlugin from 'chartjs-plugin-annotation';
 import autocolors from 'chartjs-plugin-autocolors';
+import { WordCloudController, WordElement } from 'chartjs-chart-wordcloud';
 
 
 document.addEventListener('chartjs:init', function (event) {
     const Chart = event.detail.Chart;
-    Chart.register({zoomPlugin, annotationPlugin, autocolors});
+    Chart.register({zoomPlugin, annotationPlugin, autocolors, WordCloudController, WordElement });
 });
 
